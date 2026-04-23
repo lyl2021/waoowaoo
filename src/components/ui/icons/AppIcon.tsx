@@ -10,5 +10,5 @@ export function AppIcon({ name, ...props }: AppIconProps) {
   if (!IconComponent) {
     throw new Error(`Unknown AppIcon name: ${String(name)}`)
   }
-  return <IconComponent {...props} />
+  return <IconComponent suppressHydrationWarning {...props} />
 }

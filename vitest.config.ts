@@ -1,3 +1,4 @@
+// @ts-expect-error - Vitest config types not compatible with Next.js build check
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'node:path'
 

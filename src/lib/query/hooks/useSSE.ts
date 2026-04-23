@@ -206,8 +206,11 @@ export function useSSE({ projectId, episodeId, enabled = true, onEvent }: UseSSE
       source.addEventListener(type, handler)
       listeners.push({ type, handler })
     }
-    source.onerror = (error) => {
-      _ulogError('[useSSE] stream error', error)
+    source.onerror = () => {
+      // EventSource断连是正常行为（会自动重连），只有当完全关闭时才需要关注
+      if (source.readyState === EventSource.CLOSED) {
+        _ulogError('[useSSE] stream closed permanently', undefined)
+      }
     }
 
     return () => {

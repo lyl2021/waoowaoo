@@ -11,6 +11,12 @@ import { useGithubReleaseUpdate } from '@/hooks/common/useGithubReleaseUpdate'
 import { Link } from '@/i18n/navigation'
 import { buildAuthenticatedHomeTarget } from '@/lib/home/default-route'
 
+// 客户端渲染的图片组件，避免 Dark Reader 等扩展导致的水合不匹配
+function HydratedImage(props: React.ComponentProps<typeof Image>) {
+  return (
+    <Image {...props} suppressHydrationWarning />
+  )
+}
 
 export default function Navbar() {
   const { data: session, status } = useSession()
@@ -43,11 +49,12 @@ export default function Navbar() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Link href={session ? buildAuthenticatedHomeTarget() : { pathname: '/' }} className="group">
-                <Image
+                <HydratedImage
                   src="/logo-small.png?v=1"
                   alt={tc('appName')}
                   width={80}
                   height={80}
+                  priority
                   className="object-contain transition-transform group-hover:scale-110"
                 />
               </Link>

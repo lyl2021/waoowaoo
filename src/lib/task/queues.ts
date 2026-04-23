@@ -12,7 +12,7 @@ export const QUEUE_NAME = {
 const defaultJobOptions: JobsOptions = {
   removeOnComplete: 500,
   removeOnFail: 500,
-  attempts: 5,
+  attempts: 3,
   backoff: {
     type: 'exponential',
     delay: 2_000,
