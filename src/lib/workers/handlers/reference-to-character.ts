@@ -6,7 +6,7 @@ import { queryFalStatus } from '@/lib/async-submit'
 import { fetchWithTimeoutAndRetry } from '@/lib/ark-api'
 import { getProviderConfig } from '@/lib/api-config'
 import { executeAiVisionStep } from '@/lib/ai-runtime'
-import { getUserModelConfig } from '@/lib/config-service'
+import { getUserModelConfig, resolveProjectModelCapabilityGenerationOptions } from '@/lib/config-service'
 import {
   CHARACTER_IMAGE_BANANA_RATIO,
   addCharacterPromptSuffix,
@@ -37,6 +37,7 @@ async function generateReferenceImage(params: {
   falApiKey?: string | null
   keyPrefix: string
   labelText?: string
+  capabilityOptions?: Record<string, unknown>
 }): Promise<string | null> {
   const {
     job,
@@ -48,6 +49,7 @@ async function generateReferenceImage(params: {
     falApiKey,
     keyPrefix,
     labelText,
+    capabilityOptions,
   } = params
 
   try {
@@ -59,6 +61,7 @@ async function generateReferenceImage(params: {
       {
         referenceImages,
         aspectRatio: CHARACTER_IMAGE_BANANA_RATIO,
+        ...capabilityOptions,
       },
     )
 
@@ -213,9 +216,26 @@ export async function handleReferenceToCharacterTask(job: Job<TaskJobData>) {
   const keyPrefix = isAssetHub ? 'ref-char' : `proj-ref-char-${job.data.projectId}`
   const count = normalizeImageGenerationCount('reference-to-character', payload.count)
 
+  // 解析最高分辨率配置，确保角色设定图使用最高清输出
+  let capabilityOptions: Record<string, unknown> = {}
+  try {
+    if (isProject && job.data.projectId) {
+      capabilityOptions = await resolveProjectModelCapabilityGenerationOptions({
+        projectId: job.data.projectId,
+        userId: job.data.userId,
+        modelType: 'image',
+        modelKey: imageModel,
+      })
+    }
+    // asset-hub 场景：无 projectId，此处暂不解析 capabilityOptions
+    // （需要 UserModelConfig 体系，可在后续迭代中补充）
+  } catch {
+    // capabilityOptions 解析失败不影响主流程，使用空对象即可
+  }
+
   await reportTaskProgress(job, 35, {
     stage: 'reference_to_character_generate',
-    stageLabel: '生成角色三视图',
+    stageLabel: '生成角色设定图',
     displayMode: 'detail',
   })
 
@@ -229,6 +249,7 @@ export async function handleReferenceToCharacterTask(job: Job<TaskJobData>) {
       referenceImages: useReferenceImages ? allReferenceImages : undefined,
       falApiKey,
       keyPrefix,
+      capabilityOptions,
       ...(isProject ? { labelText: characterName } : {}),
     }),
   ))

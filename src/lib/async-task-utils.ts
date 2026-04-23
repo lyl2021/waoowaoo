@@ -186,7 +186,7 @@ export async function queryGeminiBatchStatus(batchName: string, apiKey: string):
 }
 
 /**
- * 查询 Google Veo 视频任务状态
+ * 查询 Google Veo 视频任务状态（官方 SDK 模式）
  * @param operationName 操作名称（如 operations/xxx）
  * @param apiKey Google AI API Key
  */
@@ -290,6 +290,99 @@ export async function queryGoogleVideoStatus(operationName: string, apiKey: stri
     } catch (error: unknown) {
         const message = getErrorMessage(error)
         logInternal('Veo', 'ERROR', `${logPrefix} 查询异常`, { operationName, error: message })
+        return { status: 'failed', error: message }
+    }
+}
+
+/**
+ * 查询 Veo 中转 API 视频任务状态
+ * 
+ * 接口：GET {baseUrl}/v2/videos/generations/{task_id}
+ * 顶层 status 枚举：NOT_START / IN_PROGRESS / SUCCESS / FAILURE
+ * 成功时视频 URL 在 data.video_url，备选 data.detail.download_url
+ * 
+ * @param taskId 任务ID
+ * @param apiKey 中转 API Key
+ * @param baseUrl 中转 API baseUrl
+ */
+export async function queryVeoProxyStatus(taskId: string, apiKey: string, baseUrl: string): Promise<TaskStatus> {
+    if (!apiKey) {
+        throw new Error('请配置 Veo 中转 API Key')
+    }
+
+    const logPrefix = '[VeoProxy Query]'
+    const endpoint = `${baseUrl.replace(/\/+$/, '').replace(/\/v\d+$/, '')}/v2/videos/generations/${encodeURIComponent(taskId)}`
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+            },
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => '')
+            logInternal('VeoProxy', 'ERROR', `${logPrefix} 查询失败`, {
+                taskId,
+                status: response.status,
+                error: errorText.slice(0, 500),
+            })
+            // 404 可能为临时错误，返回 pending 让重试
+            if (response.status === 404) {
+                return { status: 'pending' }
+            }
+            return { status: 'failed', error: `Veo proxy query failed: ${response.status}` }
+        }
+
+        const data = await response.json() as Record<string, unknown>
+        const status = typeof data.status === 'string' ? data.status.trim() : ''
+
+        logInternal('VeoProxy', 'INFO', `${logPrefix} 响应`, {
+            taskId,
+            status,
+            progress: data.progress ?? 'N/A',
+        })
+
+        if (status === 'SUCCESS') {
+            const dataRecord = asRecord(data.data)
+            // 优先取 data.video_url，备选 data.output，再备选 data.detail.download_url
+            let videoUrl = typeof dataRecord?.video_url === 'string' ? dataRecord.video_url.trim() : ''
+            if (!videoUrl) {
+                videoUrl = typeof dataRecord?.output === 'string' ? (dataRecord.output as string).trim() : ''
+            }
+            if (!videoUrl) {
+                const detailRecord = asRecord(dataRecord?.detail)
+                videoUrl = typeof detailRecord?.download_url === 'string' ? detailRecord.download_url.trim() : ''
+            }
+            if (!videoUrl) {
+                logInternal('VeoProxy', 'ERROR', `${logPrefix} SUCCESS 但无 video_url`, {
+                    taskId,
+                    data: JSON.stringify(data).slice(0, 2000),
+                })
+                return { status: 'failed', error: 'Veo 中转任务成功但未返回视频 URL' }
+            }
+            logInternal('VeoProxy', 'INFO', `${logPrefix} 成功获取视频`, {
+                taskId,
+                videoUrl: videoUrl.substring(0, 80),
+            })
+            return { status: 'completed', videoUrl }
+        }
+
+        if (status === 'FAILURE') {
+            const failReason = typeof data.fail_reason === 'string' ? data.fail_reason.trim() : ''
+            logInternal('VeoProxy', 'ERROR', `${logPrefix} 任务失败`, {
+                taskId,
+                failReason,
+            })
+            return { status: 'failed', error: failReason || 'Veo 中转任务失败' }
+        }
+
+        // NOT_START, IN_PROGRESS 等都视为 pending
+        return { status: 'pending' }
+    } catch (error: unknown) {
+        const message = getErrorMessage(error)
+        logInternal('VeoProxy', 'ERROR', `${logPrefix} 查询异常`, { taskId, error: message })
         return { status: 'failed', error: message }
     }
 }

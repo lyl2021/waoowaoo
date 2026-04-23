@@ -1,6 +1,6 @@
-import { logInfo as _ulogInfo } from '@/lib/logging/core'
+import { logInfo as _ulogInfo, logWarn as _ulogWarn } from '@/lib/logging/core'
 import { NextRequest } from 'next/server'
-import { getSignedUrl, toFetchableUrl } from '@/lib/storage'
+import { extractStorageKey, getSignedObjectUrl, toFetchableUrl } from '@/lib/storage'
 import { requireProjectAuthLight, isErrorResponse } from '@/lib/api-auth'
 import { apiHandler, ApiError } from '@/lib/api-errors'
 
@@ -24,19 +24,31 @@ export const GET = apiHandler(async (
     const authResult = await requireProjectAuthLight(projectId)
     if (isErrorResponse(authResult)) return authResult
 
-    // 生成签名 URL 并下载
+    // 解析下载 URL：优先从签名 URL 中提取 storage key 再重新签名
     let fetchUrl: string
-    if (videoKey.startsWith('http://') || videoKey.startsWith('https://')) {
+    const storageKey = extractStorageKey(videoKey)
+
+    if (storageKey) {
+        // 成功提取 storage key → 重新生成签名 URL（避免签名过期导致 403）
+        fetchUrl = toFetchableUrl(await getSignedObjectUrl(storageKey, 3600))
+    } else if (videoKey.startsWith('http://') || videoKey.startsWith('https://')) {
+        // 无法提取 storage key 的外部 URL，直接 fetch
         fetchUrl = videoKey
     } else {
-        fetchUrl = toFetchableUrl(getSignedUrl(videoKey, 3600))
+        // 纯 storage key
+        fetchUrl = toFetchableUrl(await getSignedObjectUrl(videoKey, 3600))
     }
 
     _ulogInfo(`[视频代理] 下载: ${fetchUrl.substring(0, 100)}...`)
 
-    const response = await fetch(fetchUrl)
+    const response = await fetch(fetchUrl, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; VideoProxy/1.0)',
+        },
+    })
     if (!response.ok) {
-        throw new Error(`Failed to fetch video: ${response.statusText}`)
+        _ulogWarn(`[视频代理] 下载失败: ${response.status} ${response.statusText} url=${fetchUrl.substring(0, 120)}`)
+        throw new ApiError('EXTERNAL_ERROR')
     }
 
     // 获取内容类型和长度

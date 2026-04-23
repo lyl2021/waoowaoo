@@ -197,17 +197,16 @@ export const POST = apiHandler(async (
       let videoData: Buffer
       const storageKey = await resolveStorageKeyFromMediaValue(video.videoUrl)
 
-      if (video.videoUrl.startsWith('http://') || video.videoUrl.startsWith('https://')) {
-        const response = await fetch(toFetchableUrl(video.videoUrl))
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.statusText}`)
-        }
-        const arrayBuffer = await response.arrayBuffer()
-        videoData = Buffer.from(arrayBuffer)
-      } else if (storageKey) {
+      if (storageKey) {
+        // 优先通过 storage key 直接读取，避免签名 URL 过期导致 403
         videoData = await getObjectBuffer(storageKey)
       } else {
-        const response = await fetch(toFetchableUrl(video.videoUrl))
+        // 无法提取 storage key 的外部 URL，直接 fetch
+        const response = await fetch(toFetchableUrl(video.videoUrl), {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; VideoDownloader/1.0)',
+          },
+        })
         if (!response.ok) {
           throw new Error(`Failed to fetch: ${response.statusText}`)
         }

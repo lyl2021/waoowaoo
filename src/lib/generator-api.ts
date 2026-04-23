@@ -10,6 +10,7 @@ import { logInfo as _ulogInfo } from '@/lib/logging/core'
 
 import { createAudioGenerator, createImageGenerator, createVideoGenerator } from './generators/factory'
 import type { GenerateResult } from './generators/base'
+import { GoogleVeoVideoGenerator } from './generators/video/google'
 import { getProviderConfig, getProviderKey, resolveModelSelection } from './api-config'
 import {
     generateImageViaOpenAICompat,
@@ -22,6 +23,20 @@ import { generateBailianAudio, generateBailianImage, generateBailianVideo } from
 import { generateSiliconFlowAudio, generateSiliconFlowImage, generateSiliconFlowVideo } from './providers/siliconflow'
 
 const OFFICIAL_ONLY_PROVIDER_KEYS = new Set(['bailian', 'siliconflow'])
+
+/** bltcy 中转 API 的 baseUrl */
+const VEO_PROXY_BASE_URL = 'https://api.bltcy.ai'
+
+/** 判断 baseUrl 是否为 bltcy 中转地址（baseUrl 可能带 /v1 等路径前缀） */
+function isVeoProxyBaseUrl(baseUrl: string | undefined | null): boolean {
+    if (!baseUrl) return false
+    try {
+        const url = new URL(baseUrl)
+        return url.hostname.toLowerCase() === 'api.bltcy.ai'
+    } catch {
+        return false
+    }
+}
 
 /**
  * 将 aspectRatio 映射为 OpenAI 兼容的 size
@@ -228,6 +243,24 @@ export async function generateVideo(
 
     const { prompt, ...providerOptions } = options || {}
     if (gatewayRoute === 'openai-compat') {
+        // ─── bltcy 中转 Veo 视频：走专用的 Veo 中转生成逻辑 ───
+        // bltcy 中转 API 的请求/响应格式与 OpenAI 不兼容，
+        // 需要走 GoogleVeoVideoGenerator 的中转模式（POST /v2/videos/generations）
+        if (isVeoProxyBaseUrl(providerConfig.baseUrl)) {
+            const veoGenerator = new GoogleVeoVideoGenerator(selection.provider)
+            return await veoGenerator.generate({
+                userId,
+                imageUrl,
+                prompt: prompt || '',
+                options: {
+                    ...providerOptions,
+                    provider: selection.provider,
+                    modelId: selection.modelId,
+                    modelKey: selection.modelKey,
+                },
+            })
+        }
+
         const compatTemplate = selection.compatMediaTemplate
         if (providerKey === 'openai-compatible' && !compatTemplate) {
             throw new Error(`MODEL_COMPAT_MEDIA_TEMPLATE_REQUIRED: ${selection.modelKey}`)

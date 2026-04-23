@@ -19,6 +19,11 @@ type OpenAIImageGenerateSize =
   | '512x512'
   | '1792x1024'
   | '1024x1792'
+  // gpt-image-2 新增预设尺寸
+  | '2048x2048'    // 2K 1:1
+  | '2048x1152'    // 2K 16:9
+  | '3840x2160'    // 4K 16:9
+  | '2160x3840'    // 4K 9:16
 
 const OPENAI_IMAGE_OPTION_KEYS = new Set([
   'provider',
@@ -81,10 +86,62 @@ function normalizeOpenAIImageSize(value: string | undefined): OpenAIImageGenerat
     || value === '512x512'
     || value === '1792x1024'
     || value === '1024x1792'
+    || value === '2048x2048'
+    || value === '2048x1152'
+    || value === '3840x2160'
+    || value === '2160x3840'
   ) {
     return value
   }
+  // gpt-image-2 自定义尺寸：两条边都是 16 的倍数、长短边比例 ≤ 3:1、总像素 ≤ 8,294,400
+  if (/^\d{3,4}x\d{3,4}$/.test(value)) {
+    const [wStr, hStr] = value.split('x')
+    const w = parseInt(wStr!, 10)
+    const h = parseInt(hStr!, 10)
+    if (w % 16 === 0 && h % 16 === 0 && w / h <= 3 && h / w <= 3 && w * h >= 655360 && w * h <= 8294400) {
+      return value as OpenAIImageGenerateSize
+    }
+  }
   throw new Error(`OPENAI_COMPAT_IMAGE_OPTION_UNSUPPORTED: size=${value}`)
+}
+
+/**
+ * resolution token + aspectRatio → OpenAI size 字符串
+ * gpt-image-2 支持 1K/2K/4K 三档分辨率 + 多种比例
+ */
+const RESOLUTION_SIZE_MAP: Record<string, Record<string, string>> = {
+  '1K': {
+    '1:1': '1024x1024',
+    '3:2': '1536x1024',
+    '2:3': '1024x1536',
+    '16:9': '1536x864',
+    '9:16': '864x1536',
+  },
+  '2K': {
+    '1:1': '2048x2048',
+    '3:2': '2048x1360',
+    '2:3': '1360x2048',
+    '16:9': '2048x1152',
+    '9:16': '1152x2048',
+  },
+  '4K': {
+    '1:1': '2816x2816',
+    '3:2': '3520x2336',
+    '2:3': '2336x3520',
+    '16:9': '3840x2160',
+    '9:16': '2160x3840',
+  },
+}
+
+function resolveSizeFromResolutionAndAspectRatio(
+  resolution: string,
+  aspectRatio?: string,
+): string | undefined {
+  const ratioMap = RESOLUTION_SIZE_MAP[resolution]
+  if (!ratioMap) return undefined
+  if (aspectRatio && ratioMap[aspectRatio]) return ratioMap[aspectRatio]
+  // 兜底：返回该分辨率下第一个尺寸
+  return Object.values(ratioMap)[0]
 }
 
 function resolveRawSize(options: Record<string, unknown>): string | undefined {
@@ -92,6 +149,12 @@ function resolveRawSize(options: Record<string, unknown>): string | undefined {
   const resolution = readStringOption(options.resolution, 'resolution')
   if (size && resolution && size !== resolution) {
     throw new Error('OPENAI_COMPAT_IMAGE_OPTION_CONFLICT: size and resolution must match')
+  }
+  // 如果传了 resolution token（如 4K），结合 aspectRatio 转换为具体 size
+  if (resolution && !size && RESOLUTION_SIZE_MAP[resolution]) {
+    const aspectRatio = readStringOption(options.aspectRatio, 'aspectRatio')
+    const mapped = resolveSizeFromResolutionAndAspectRatio(resolution, aspectRatio)
+    if (mapped) return mapped
   }
   return size || resolution
 }

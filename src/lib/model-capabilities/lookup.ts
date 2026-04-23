@@ -278,28 +278,50 @@ export function resolveGenerationOptionsForModel(input: {
   let normalizedSelection = { ...selection }
   const autofillIssues: CapabilitySelectionValidationIssue[] = []
 
-  // V7: 针对 image 模型缺少 resolution 的情况，如果 catalog 中声明了 resolutionOptions，
-  // 且用户在配置中完全未设置该字段，则自动使用第一个可选值作为默认值，提升 UI/UX。
-  if (input.modelType === 'image') {
+  // V7: 针对 image/video 模型缺少 resolution/quality 的情况，如果 catalog 中声明了对应 Options，
+  // 且用户在配置中完全未设置该字段，则自动使用默认值，提升 UI/UX。
+  // 统一使用最后一个可选值（默认选择最高质量/最高分辨率，确保最高清输出）
+  if (input.modelType === 'image' || input.modelType === 'video') {
     const optionFields = getCapabilityOptionFields(input.modelType, input.capabilities)
+
+    // 自动补全 resolution
     const hasResolutionOptions = Array.isArray(optionFields.resolution) && optionFields.resolution.length > 0
     const hasResolutionInSelection = Object.prototype.hasOwnProperty.call(normalizedSelection, 'resolution')
 
     if (hasResolutionOptions && !hasResolutionInSelection) {
-      const firstResolution = optionFields.resolution[0]
+      const defaultResolution = optionFields.resolution[optionFields.resolution.length - 1]
 
-      // 只有在 capabilities 确实声明了 resolutionOptions，且 validate 阶段报告了
-      // 「resolution 必填但缺失」的情况下，才进行自动补全，避免掩盖其他问题。
       const missingResolutionIssue = precheckIssues.find(
         (issue) =>
           issue.code === 'CAPABILITY_REQUIRED'
           && issue.field === `capabilities.${input.modelKey}.resolution`,
       )
 
-      if (missingResolutionIssue && optionFields.resolution.includes(firstResolution)) {
+      if (missingResolutionIssue && optionFields.resolution.includes(defaultResolution)) {
         normalizedSelection = {
           ...normalizedSelection,
-          resolution: firstResolution,
+          resolution: defaultResolution,
+        }
+      }
+    }
+
+    // 自动补全 quality（如 gpt-image-2 的 qualityOptions）
+    const hasQualityOptions = Array.isArray(optionFields.quality) && optionFields.quality.length > 0
+    const hasQualityInSelection = Object.prototype.hasOwnProperty.call(normalizedSelection, 'quality')
+
+    if (hasQualityOptions && !hasQualityInSelection) {
+      const defaultQuality = optionFields.quality[optionFields.quality.length - 1]
+
+      const missingQualityIssue = precheckIssues.find(
+        (issue) =>
+          issue.code === 'CAPABILITY_REQUIRED'
+          && issue.field === `capabilities.${input.modelKey}.quality`,
+      )
+
+      if (missingQualityIssue && optionFields.quality.includes(defaultQuality)) {
+        normalizedSelection = {
+          ...normalizedSelection,
+          quality: defaultQuality,
         }
       }
     }

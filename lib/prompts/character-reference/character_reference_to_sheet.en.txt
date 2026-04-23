@@ -1,22 +1,80 @@
 # Reference Image To Character Sheet Prompt (img2img)
 
-Use the provided reference image to extract face traits, hairstyle, body shape, and outfit structure.
+Use the provided reference image to extract face traits, hairstyle, body shape, and outfit structure, then generate a comprehensive multi-view character reference sheet.
 
 ## Style priority
 Follow the user-selected style instruction as the highest-priority rule.
 Use reference images only to preserve character identity traits (face, hairstyle, body shape, outfit structure), and do not let reference style override the requested style.
 Only if no explicit style instruction is provided, you may preserve the original visual style.
 
+## Character sheet layout requirements
+
+Generate a professional character reference sheet with the following CROSS-SPLIT layout:
+
+### Left column (1/4 width)
+
+**Top section (3/4 height): Front Close-up**
+- A detailed front-facing close-up of the character's face
+- Shows complete facial features: eye shape, nose, lip shape, eyelashes, brows
+- Highlights identifying marks: moles, scars, dimples, freckles
+- This is the FACE ANCHOR for ControlNet/IP-Adapter — must be extremely detailed
+- Clean neutral expression, looking directly at camera
+
+**Bottom section (1/4 height): Expression Sheet**
+- Show 4 different emotional expressions in a row:
+  1. Happy/Smiling — how the face looks when joyful
+  2. Angry/Frowning — how the face deforms when upset
+  3. Sad — drooping features, downcast eyes
+  4. Surprised — raised brows, wide eyes, open mouth
+- This tells AI how facial features deform under different emotions
+- Prevents "dead face" or feature distortion during generation
+
+### Right column (3/4 width)
+
+**Top section (2/3 height): Turnaround (Rotating Views)**
+- Display 4 views of the full body from left to right:
+  1. Front view (facing camera directly)
+  2. 3/4 side view (slight angle, showing depth)
+  3. Side view (full profile)
+  4. Back view (facing away from camera)
+- All 4 views must be the EXACT SAME character with consistent:
+  - Body proportions and height
+  - Facial features and expression (neutral/calm)
+  - Outfit details, accessories, and colors
+  - Hair style and volume
+- Character size must be uniform across all views
+- This is the CORE element ensuring 360-degree consistency
+
+**Bottom section (1/3 height): Action Poses**
+- Display 2-3 action poses in an evenly-spaced horizontal row, demonstrating clothing behavior:
+  - Sitting pose (showing clothing fold and crease changes)
+  - Running/moving pose (showing fabric dynamics and drape)
+  - Optional: standing with arms crossed or other natural pose
+- Each pose must have sufficient spacing between figures, matching the gap between the 4 turnaround views above — avoid overlap or occlusion between adjacent poses
+- This is CRITICAL for clothing consistency — how clothes crease, drape, and stretch matters
+- Outfit details must remain consistent with turnaround views above
+
 ## Generation rules
 1. Ignore the original image color cast and lighting defects
-2. Use clean, soft studio lighting
+2. Use clean, soft studio lighting with even illumination
 3. Keep natural, aesthetically correct body proportions
 4. Do not copy blur, noise, compression artifacts, or defects
 5. Output must be clear, sharp, and production-quality
-6. Character expression should be neutral and calm, looking at camera
+6. Character expression in turnaround views should be neutral and calm, looking at camera
+7. Front close-up should be highly detailed, suitable for face-locking via ControlNet
+8. Expression sheet faces should clearly show emotional deformation of facial features
+9. Action poses must clearly show clothing fold and drape changes
+
+## Background requirement
+- Pure solid white background throughout the entire sheet
+- No background scenery, no gradients, no decorative elements
+- This ensures the character can be cleanly extracted for compositing
 
 ## Missing-part completion
 If only half body or partial body is visible, infer and complete hidden parts consistently:
 - Infer matching lower-body clothing
 - Infer suitable footwear
 - Infer missing hands/arms in a natural way
+
+## Quality keywords
+character sheet, multiple views, turnaround, front view, side view, back view, 3/4 view, expression sheet, pose sheet, face close-up, white background, clean presentation, production quality

@@ -17,7 +17,7 @@ import { logInfo as _ulogInfo, logError as _ulogError } from '@/lib/logging/core
  */
 
 import { queryFalStatus } from './async-submit'
-import { queryGeminiBatchStatus, querySeedanceVideoStatus, queryGoogleVideoStatus } from './async-task-utils'
+import { queryGeminiBatchStatus, querySeedanceVideoStatus, queryGoogleVideoStatus, queryVeoProxyStatus } from './async-task-utils'
 import { getProviderConfig, getUserModels } from './api-config'
 import { buildRenderedTemplateRequest, buildTemplateVariables, normalizeResponseJson, readJsonPath } from './openai-compat-template-runtime'
 import { composeModelKey } from './model-config-contract'
@@ -48,7 +48,7 @@ function getErrorMessage(error: unknown): string {
  * 解析 externalId 获取 provider、type 和请求信息
  */
 export function parseExternalId(externalId: string): {
-    provider: 'FAL' | 'ARK' | 'GEMINI' | 'GOOGLE' | 'MINIMAX' | 'VIDU' | 'OPENAI' | 'OCOMPAT' | 'BAILIAN' | 'SILICONFLOW' | 'UNKNOWN'
+    provider: 'FAL' | 'ARK' | 'GEMINI' | 'GOOGLE' | 'VEOPROXY' | 'MINIMAX' | 'VIDU' | 'OPENAI' | 'OCOMPAT' | 'BAILIAN' | 'SILICONFLOW' | 'UNKNOWN'
     type: 'VIDEO' | 'IMAGE' | 'BATCH' | 'UNKNOWN'
     endpoint?: string
     requestId: string
@@ -115,6 +115,39 @@ export function parseExternalId(externalId: string): {
         }
         return {
             provider: 'GOOGLE',
+            type: 'VIDEO',
+            requestId,
+        }
+    }
+
+    if (externalId.startsWith('VEOPROXY:')) {
+        const parts = externalId.split(':')
+        const type = parts[1]
+        if (type !== 'VIDEO') {
+            throw new Error(`无效 VEOPROXY externalId: "${externalId}"，应为 VEOPROXY:VIDEO:[providerToken:]taskId`)
+        }
+        // 格式1: VEOPROXY:VIDEO:taskId → providerId='google'
+        // 格式2: VEOPROXY:VIDEO:providerToken:taskId → 需要解码 providerToken
+        const candidateToken = parts[2] || ''
+        const isProviderToken = candidateToken.startsWith('b64_') || candidateToken.startsWith('u_')
+        if (isProviderToken) {
+            const requestId = parts.slice(3).join(':')
+            if (!requestId) {
+                throw new Error(`无效 VEOPROXY externalId: "${externalId}"，缺少 taskId`)
+            }
+            return {
+                provider: 'VEOPROXY',
+                type: 'VIDEO',
+                requestId,
+                providerToken: candidateToken,
+            }
+        }
+        const requestId = parts.slice(2).join(':')
+        if (!requestId) {
+            throw new Error(`无效 VEOPROXY externalId: "${externalId}"，缺少 taskId`)
+        }
+        return {
+            provider: 'VEOPROXY',
             type: 'VIDEO',
             requestId,
         }
@@ -212,7 +245,7 @@ export function parseExternalId(externalId: string): {
 
     throw new Error(
         `无法识别的 externalId 格式: "${externalId}". ` +
-        `支持的格式: FAL:TYPE:endpoint:requestId, ARK:TYPE:requestId, GEMINI:BATCH:batchName, GOOGLE:VIDEO:operationName, MINIMAX:TYPE:taskId, VIDU:TYPE:taskId, OPENAI:VIDEO:providerToken:videoId, OCOMPAT:TYPE:providerToken:modelKeyToken:taskId, BAILIAN:TYPE:requestId, SILICONFLOW:TYPE:requestId`
+        `支持的格式: FAL:TYPE:endpoint:requestId, ARK:TYPE:requestId, GEMINI:BATCH:batchName, GOOGLE:VIDEO:operationName, VEOPROXY:VIDEO:taskId, MINIMAX:TYPE:taskId, VIDU:TYPE:taskId, OPENAI:VIDEO:providerToken:videoId, OCOMPAT:TYPE:providerToken:modelKeyToken:taskId, BAILIAN:TYPE:requestId, SILICONFLOW:TYPE:requestId`
     )
 }
 
@@ -240,6 +273,8 @@ export async function pollAsyncTask(
             return await pollGeminiTask(parsed.requestId, userId)
         case 'GOOGLE':
             return await pollGoogleVideoTask(parsed.requestId, userId)
+        case 'VEOPROXY':
+            return await pollVeoProxyTask(parsed.requestId, userId, parsed.providerToken)
         case 'MINIMAX':
             return await pollMinimaxTask(parsed.requestId, userId)
         case 'VIDU':
@@ -321,6 +356,20 @@ async function pollOCompatTask(
     const modelKey = resolveOCompatModelKey(providerId, modelKeyToken)
     const config = await getProviderConfig(userId, providerId)
     if (!config.baseUrl) throw new Error(`PROVIDER_BASE_URL_MISSING: ${providerId}`)
+
+    // ─── bltcy 中转 Veo 视频：走专用的 VEOPROXY 查询逻辑 ───
+    // 旧任务可能通过 OCOMPAT 路径创建，但实际是 bltcy 中转的 Veo 视频，
+    // OCOMPAT 模板无法正确解析 data.video_url，需要改走专用查询。
+    if (type === 'VIDEO' && isVeoProxyBaseUrl(config.baseUrl)) {
+        const resolvedBaseUrl = config.baseUrl.replace(/\/+$/, '')
+        const result = await queryVeoProxyStatus(taskId, config.apiKey, resolvedBaseUrl)
+        return {
+            status: result.status,
+            videoUrl: result.videoUrl,
+            resultUrl: result.videoUrl,
+            error: result.error
+        }
+    }
 
     const models = await getUserModels(userId)
     const model = models.find((item) => item.modelKey === modelKey)
@@ -421,6 +470,20 @@ async function pollOpenAIVideoTask(
     const config = await getProviderConfig(userId, providerId)
     if (!config.baseUrl) {
         throw new Error(`PROVIDER_BASE_URL_MISSING: ${config.id}`)
+    }
+
+    // ─── bltcy 中转 Veo 视频：走专用的 VEOPROXY 查询逻辑 ───
+    // bltcy API 的响应格式（status: SUCCESS/FAILURE, data.video_url）与 OpenAI 不同，
+    // 需要走 queryVeoProxyStatus 才能正确提取视频 URL。
+    if (isVeoProxyBaseUrl(config.baseUrl)) {
+        const resolvedBaseUrl = config.baseUrl.replace(/\/+$/, '').replace(/\/v\d+$/, '')
+        const result = await queryVeoProxyStatus(videoId, config.apiKey, resolvedBaseUrl)
+        return {
+            status: result.status,
+            videoUrl: result.videoUrl,
+            resultUrl: result.videoUrl,
+            error: result.error
+        }
     }
 
     // Use raw fetch instead of SDK to handle varying response formats across gateways
@@ -538,14 +601,71 @@ async function pollGeminiTask(
 }
 
 /**
- * Google Veo 视频任务轮询
+ * Google Veo 视频任务轮询（官方 SDK）
  */
 async function pollGoogleVideoTask(
     operationName: string,
-    userId: string
+    userId: string,
 ): Promise<PollResult> {
     const { apiKey } = await getProviderConfig(userId, 'google')
     const result = await queryGoogleVideoStatus(operationName, apiKey)
+
+    return {
+        status: result.status,
+        videoUrl: result.videoUrl,
+        resultUrl: result.videoUrl,
+        error: result.error
+    }
+}
+
+/**
+ * Veo 中转 API 视频任务轮询
+ * 
+ * 仅当 provider 配置的 baseUrl 为 https://api.bltcy.ai 时走中转查询，
+ * 否则回退到官方 SDK 查询逻辑。
+ */
+const VEO_PROXY_BASE_URL = 'https://api.bltcy.ai'
+
+function isVeoProxyBaseUrl(baseUrl: string | undefined | null): boolean {
+    if (!baseUrl) return false
+    try {
+        const url = new URL(baseUrl)
+        return url.hostname.toLowerCase() === 'api.bltcy.ai'
+    } catch {
+        return false
+    }
+}
+
+async function pollVeoProxyTask(
+    taskId: string,
+    userId: string,
+    providerToken?: string,
+): Promise<PollResult> {
+    // 从 providerToken 解析出实际 providerId，默认为 'google'
+    let providerId = 'google'
+    if (providerToken) {
+        try {
+            const decoded = Buffer.from(
+                providerToken.startsWith('b64_') ? providerToken.slice(4) : providerToken,
+                'base64url'
+            ).toString('utf8').trim()
+            if (decoded) {
+                providerId = decoded
+            }
+        } catch {
+            // 解码失败，回退到 'google'
+        }
+    }
+    const { apiKey, baseUrl } = await getProviderConfig(userId, providerId)
+
+    // 安全检查：仅当 baseUrl 是 bltcy 中转地址时走 VEOPROXY 查询
+    // 如果配置已被修改为非 bltcy 地址，回退到 SDK 查询
+    if (!isVeoProxyBaseUrl(baseUrl)) {
+        return await pollGoogleVideoTask(taskId, userId)
+    }
+
+    const resolvedBaseUrl = (baseUrl || '').replace(/\/+$/, '').replace(/\/v\d+$/, '')
+    const result = await queryVeoProxyStatus(taskId, apiKey, resolvedBaseUrl)
 
     return {
         status: result.status,
@@ -950,7 +1070,7 @@ async function queryViduTaskStatus(
  * 创建标准格式的 externalId
  */
 export function formatExternalId(
-    provider: 'FAL' | 'ARK' | 'GEMINI' | 'GOOGLE' | 'MINIMAX' | 'VIDU' | 'OPENAI' | 'OCOMPAT' | 'BAILIAN' | 'SILICONFLOW',
+    provider: 'FAL' | 'ARK' | 'GEMINI' | 'GOOGLE' | 'VEOPROXY' | 'MINIMAX' | 'VIDU' | 'OPENAI' | 'OCOMPAT' | 'BAILIAN' | 'SILICONFLOW',
     type: 'VIDEO' | 'IMAGE' | 'BATCH',
     requestId: string,
     endpoint?: string,

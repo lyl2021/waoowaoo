@@ -188,8 +188,10 @@ export function getArtStylePrompt(
   return locale === 'en' ? style.promptEn : style.promptZh
 }
 
-// 角色形象生成的系统后缀（始终添加到提示词末尾，不显示给用户）- 左侧面部特写+右侧三视图
-export const CHARACTER_PROMPT_SUFFIX = '角色设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是角色的正面特写（如果是人类则展示完整正脸，如果是动物/生物则展示最具辨识度的正面形态）；【右侧区域】占约2/3宽度，是角色三视图横向排列（从左到右依次为：正面全身、侧面全身、背面全身），三视图高度一致。纯白色背景，无其他元素。'
+// 角色形象生成的系统后缀（始终添加到提示词末尾，不显示给用户）
+// 升级版：专业角色设定图，十字分割布局
+// 左侧1/4：正面特写+表情表 | 右侧3/4：旋转视图+动作姿态
+export const CHARACTER_PROMPT_SUFFIX = '角色设定图，画面分为左右两大区域：【左侧区域】占约1/4宽度，上半部分（约3/4高度）为角色正面特写（完整正脸，展示五官细节、眼型、唇型、辨识标记）；下半部分（约1/4高度）为表情表（Expression Sheet），展示4种情绪面部特写：喜、怒、哀、惊，告诉AI五官在不同情绪下如何变形；【右侧区域】占约3/4宽度，上半部分（约2/3高度）为高质量角色多视图旋转图（Turnaround），从左到右依次为：正面全身（front view）、3/4侧面全身（3/4 side view）、侧面全身（side view）、背面全身（back view），四个视角人物大小一致、高度一致、服饰细节一致；下半部分（约1/3高度）为动作姿态参考（2-3个动作姿势横向均匀排列，人物之间保持充足间距避免覆盖重叠，与上方旋转视图4个视角的间距保持一致，展示服装在坐姿、跑动时的褶皱变化）。pure solid white background, isolated character on white background, absolutely no background scenery, character sheet, multiple views, turnaround, expression sheet, uniform character size across all views, no text, no words, no watermarks。'
 
 // 道具图片生成的系统后缀（固定白底三视图资产图）
 export const PROP_PROMPT_SUFFIX = '道具设定图，画面分为左右两个区域：【左侧区域】占约1/3宽度，是道具主体的主视图特写；【右侧区域】占约2/3宽度，是同一道具的三视图横向排列（从左到右依次为：正面、侧面、背面），三视图高度一致。纯白色背景，主体居中完整展示，无人物、无手部、无桌面陈设、无环境背景、无其他元素。'

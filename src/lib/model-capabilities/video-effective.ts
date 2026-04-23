@@ -223,7 +223,10 @@ export function normalizeVideoGenerationSelections(input: {
       }
 
       if (current === undefined || !compatibleOptions.includes(current)) {
-        normalized[definition.field] = compatibleOptions[0]
+        // resolution / duration 字段默认选择最高值（最后一个选项），其余字段默认选第一个
+        normalized[definition.field] = (definition.field === 'resolution' || definition.field === 'duration')
+          ? compatibleOptions[compatibleOptions.length - 1]
+          : compatibleOptions[0]
         changed = true
       }
     }

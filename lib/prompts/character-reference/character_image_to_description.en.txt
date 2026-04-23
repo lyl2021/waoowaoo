@@ -12,6 +12,18 @@ Include all of the following:
 6. Accessories and signature details
 7. Overall style keywords
 
+## Facial identity anchors (critical for character consistency)
+Pay special attention to and clearly describe:
+- Face shape (oval/square/heart/round/diamond/oblong)
+- Jawline (sharp angular/soft rounded/prominent)
+- Eye shape (almond/round/hooded/monolid/upturned) and eye details (double eyelids, epicanthic fold, etc.)
+- Nose shape (straight bridge, rounded tip, wide/narrow)
+- Lip shape (full/thin, defined cupid's bow, etc.)
+- Unique identifying marks: moles (with exact location), scars, birthmarks, dimples — these are the STRONGEST anchors for identity consistency
+- If visible: iris color, hair color, skin tone (as hex color references if possible, e.g. "dark brown eyes #3D2314")
+
+These facial identity anchors ensure the same character can be recognized across different expressions and views.
+
 ## Missing-part completion
 If the image only shows part of the body, infer the missing parts consistently.
 - Missing lower body: infer matching pants/skirt style
@@ -20,9 +32,9 @@ If the image only shows part of the body, infer the missing parts consistently.
 
 ## Forbidden content
 Do not mention:
-- Skin color
-- Eye color
-- Facial expression
+- Skin color (unless as a hex reference for consistency)
+- Eye color (unless as a hex reference for consistency)
+- Facial expression (describe the face at rest, not the current emotion)
 - Pose or action
 - Background
 
