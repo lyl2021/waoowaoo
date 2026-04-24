@@ -197,24 +197,23 @@ export const PROP_PROMPT_SUFFIX = '道具设定图，画面分为左右两个区
 // 场景图片生成的系统后缀（已禁用四视图，直接生成单张场景图）
 export const LOCATION_PROMPT_SUFFIX = ''
 
-// 角色资产图生成比例（当前角色设定图实际使用 3:2）
+// 角色资产图生成比例
 export const CHARACTER_ASSET_IMAGE_RATIO = '3:2'
-// 历史保留：旧注释中曾写 16:9，但当前资产图生成统一以 CHARACTER_ASSET_IMAGE_RATIO 为准
 export const CHARACTER_IMAGE_RATIO = CHARACTER_ASSET_IMAGE_RATIO
 // 角色图片尺寸（用于Seedream API）
-export const CHARACTER_IMAGE_SIZE = '3840x2160'  // 16:9 横版
+export const CHARACTER_IMAGE_SIZE = '3840x2160'  // 16:9 横版 4K
 // 角色图片尺寸（用于Banana API）
 export const CHARACTER_IMAGE_BANANA_RATIO = CHARACTER_ASSET_IMAGE_RATIO
 
 // 道具图片生成比例（与角色资产图保持一致）
 export const PROP_IMAGE_RATIO = CHARACTER_ASSET_IMAGE_RATIO
 
-// 场景图片生成比例（1:1 正方形单张场景）
+// 场景图片生成比例
 export const LOCATION_IMAGE_RATIO = '1:1'
-// 场景图片尺寸（用于Seedream API）- 4K
-export const LOCATION_IMAGE_SIZE = '4096x4096'  // 1:1 正方形 4K
+// 场景图片尺寸（用于Seedream API）
+export const LOCATION_IMAGE_SIZE = '4096x4096'
 // 场景图片尺寸（用于Banana API）
-export const LOCATION_IMAGE_BANANA_RATIO = '1:1'
+export const LOCATION_IMAGE_BANANA_RATIO = LOCATION_IMAGE_RATIO
 
 // 从提示词中移除角色系统后缀（用于显示给用户）
 export function removeCharacterPromptSuffix(prompt: string): string {

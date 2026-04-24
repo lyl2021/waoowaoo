@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl'
  * 布局：上面名字+描述，下面三张图片（每张图片有独立的编辑和重新生成按钮）
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Character, CharacterAppearance } from '@/types/project'
 import { shouldShowError } from '@/lib/error-utils'
 import VoiceSettings from './VoiceSettings'
@@ -81,6 +81,7 @@ export default function CharacterCard({
   const [pendingUploadIndex, setPendingUploadIndex] = useState<number | undefined>(undefined)
   const [showDeleteMenu, setShowDeleteMenu] = useState(false)
   const [isConfirmingSelection, setIsConfirmingSelection] = useState(false)
+  const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
 
   // 处理删除按钮点击
   const handleDeleteClick = () => {
@@ -143,7 +144,23 @@ export default function CharacterCard({
   const generatedImageCount = imageUrlsWithIndex.length
 
   const hasMultipleImages = imageUrlsWithIndex.length > 1
-  const selectedIndex = appearance.selectedIndex ?? null
+  const serverSelectedIndex = appearance.selectedIndex ?? null
+  const resolvedSelectedIndex: number | null = pendingSelectedIndex !== undefined ? pendingSelectedIndex : serverSelectedIndex
+  // 多图时默认选中方案1，避免需要先点击才出现确认按钮
+  const selectedIndex: number | null = hasMultipleImages && resolvedSelectedIndex === null ? 0 : resolvedSelectedIndex
+
+  // 同步本地选中状态：当服务端数据追上时清除 pending
+  useEffect(() => {
+    if (pendingSelectedIndex !== undefined && serverSelectedIndex === pendingSelectedIndex) {
+      setPendingSelectedIndex(undefined)
+    }
+  }, [serverSelectedIndex, pendingSelectedIndex])
+
+  // 本地选择处理器：立即更新 UI + 通知父组件
+  const handleLocalSelectImage = useCallback((characterId: string, appearanceId: string, imageIndex: number | null) => {
+    setPendingSelectedIndex(imageIndex)
+    onSelectImage?.(characterId, appearanceId, imageIndex)
+  }, [onSelectImage])
 
   // 🔥 统一图片URL优先级：imageUrl > imageUrls[selectedIndex] > imageUrls[0]
   // 这样确保编辑后的新图片能正确显示
@@ -302,7 +319,7 @@ export default function CharacterCard({
           isImageTaskRunning={isImageTaskRunning}
           displayTaskPresentation={displayTaskPresentation}
           onImageClick={onImageClick}
-          onSelectImage={onSelectImage}
+          onSelectImage={handleLocalSelectImage}
         />
 
         <CharacterCardActions

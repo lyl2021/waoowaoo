@@ -60,9 +60,7 @@ export default function LocationImageList(props: LocationImageListProps) {
     return (
       <div className="grid grid-cols-3 gap-3">
         {props.images.map((img) => {
-          const isThisSelected = props.selectedImageId
-            ? img.id === props.selectedImageId
-            : img.isSelected
+          const isThisSelected = props.selectedIndex === img.imageIndex
           const slotTaskRunning =
             props.isImageTaskRunning(img.imageIndex) ||
             (props.isGroupTaskRunning && !img.imageUrl)

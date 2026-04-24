@@ -199,7 +199,7 @@ export default function HomePage() {
         }
       `}</style>
 
-      <main className="flex flex-col items-center pt-[13vh] pb-12 px-4 max-w-5xl mx-auto w-full">
+      <main className="flex flex-col items-center pt-[13vh] pb-12 px-4 sm:px-6 lg:px-10 mx-auto w-full">
 
         {/* ─── 取景器整体包裹：标题 + 输入框 ─── */}
         <div className="w-full relative p-5">

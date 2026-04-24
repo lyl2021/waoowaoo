@@ -373,7 +373,7 @@ export function AssetGrid({
                                 {t('characters')}
                                 <span className="glass-chip glass-chip-neutral px-2 py-0.5">{characters.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4">
                                 {charactersPage.items.map((character) => (
                                     <CharacterCard
                                         key={character.id}
@@ -441,7 +441,7 @@ export function AssetGrid({
                                 {t('voices')}
                                 <span className="glass-chip glass-chip-info px-2 py-0.5">{voices.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4">
                                 {voicesPage.items.map((voice) => (
                                     <VoiceCard
                                         key={voice.id}

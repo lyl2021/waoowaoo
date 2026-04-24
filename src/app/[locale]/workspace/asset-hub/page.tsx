@@ -453,7 +453,7 @@ export default function AssetHubPage() {
     return (
         <div className="glass-page min-h-screen">
             <Navbar />
-            <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {/* 页面标题 */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-[var(--glass-text-primary)]">{t('title')}</h1>

@@ -2,7 +2,7 @@
 import { logInfo as _ulogInfo } from '@/lib/logging/core'
 import { resolveErrorDisplay } from '@/lib/errors/display'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
     useGenerateCharacterImage,
@@ -76,6 +76,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showDeleteMenu, setShowDeleteMenu] = useState(false)
     const latestSelectRequestRef = useRef(0)
+    const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
 
     // 计算属性
     const appearance = character.appearances[activeAppearance] || character.appearances[0]
@@ -93,7 +94,17 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     const imageUrls = appearance?.imageUrls || []
     const generatedImageCount = imageUrls.filter(u => isValidUrl(u)).length
     const hasMultipleImages = generatedImageCount > 1
-    const effectiveSelectedIndex: number | null = appearance?.selectedIndex ?? null
+    const serverSelectedIndex: number | null = appearance?.selectedIndex ?? null
+    const resolvedSelectedIndex: number | null = pendingSelectedIndex !== undefined ? pendingSelectedIndex : serverSelectedIndex
+    // 多图时默认选中方案1，避免需要先点击才出现确认按钮
+    const effectiveSelectedIndex: number | null = hasMultipleImages && resolvedSelectedIndex === null ? 0 : resolvedSelectedIndex
+
+    // 同步：当服务端数据追上时清除 pending 状态
+    useEffect(() => {
+        if (pendingSelectedIndex !== undefined && serverSelectedIndex === pendingSelectedIndex) {
+            setPendingSelectedIndex(undefined)
+        }
+    }, [serverSelectedIndex, pendingSelectedIndex])
     const currentImageUrl = appearance?.imageUrl || (effectiveSelectedIndex !== null ? imageUrls[effectiveSelectedIndex] : null) || imageUrls.find(u => u) || null
     const hasPreviousVersion = !!(appearance?.previousImageUrl || (appearance?.previousImageUrls && appearance.previousImageUrls.length > 0))
 
@@ -137,6 +148,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     // 选择图片（依赖 query 缓存乐观更新）
     const handleSelectImage = (imageIndex: number | null) => {
         if (imageIndex === effectiveSelectedIndex) return
+        setPendingSelectedIndex(imageIndex)
         const requestId = latestSelectRequestRef.current + 1
         latestSelectRequestRef.current = requestId
         selectImage.mutate({

@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
  * 布局：上面名字+描述，下面三张图片
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Location } from '@/types/project'
 import { shouldShowError } from '@/lib/error-utils'
 import { useUploadProjectLocationImage } from '@/lib/query/mutations'
@@ -114,7 +114,24 @@ export default function LocationCard({
   const selectedImage = location.selectedImageId
     ? orderedImages.find((img) => img.id === location.selectedImageId)
     : orderedImages.find((img) => img.isSelected)
-  const selectedIndex = selectedImage?.imageIndex ?? null
+  const serverSelectedIndex = selectedImage?.imageIndex ?? null
+
+  // 乐观更新：pendingSelectedIndex
+  const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null>(null)
+  const hasMultipleImages = generatedImageCount > 1
+  const resolvedSelectedIndex = hasMultipleImages && serverSelectedIndex === null ? 0 : serverSelectedIndex
+  const selectedIndex = pendingSelectedIndex !== null ? pendingSelectedIndex : resolvedSelectedIndex
+
+  useEffect(() => {
+    if (pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex) {
+      setPendingSelectedIndex(null)
+    }
+  }, [pendingSelectedIndex, serverSelectedIndex])
+
+  const handleLocalSelectImage = useCallback((locationId: string, imageIndex: number | null) => {
+    setPendingSelectedIndex(imageIndex)
+    onSelectImage?.(locationId, imageIndex)
+  }, [onSelectImage])
 
   // 当前显示的图片及其 imageIndex
   const currentImageUrl = selectedImage?.imageUrl || imagesWithUrl[0]?.imageUrl || null
@@ -175,13 +192,12 @@ export default function LocationCard({
     requestedCount: generatedImageCount > 1 ? generatedImageCount : generationCount,
   })
   const displaySlotCount = displaySelectionImages.length
-  const hasMultipleImages = generatedImageCount > 1
 
   // 检查是否有历史版本（用于撤回功能）
   const hasPreviousVersion = location.images?.some(img => img.previousImageUrl) || false
 
   const showSelectionMode = displaySlotCount > 1
-  const singleImageAspectClassName = assetType === 'prop' ? 'aspect-[3/2]' : 'aspect-square'
+  const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-[3/2]' : 'aspect-square'
 
   // 选择模式：显示名字在上，三张图片在下
   if (showSelectionMode) {
@@ -263,7 +279,7 @@ export default function LocationCard({
           isImageTaskRunning={isImageTaskRunning}
           displayTaskPresentation={displayTaskPresentation}
           onImageClick={onImageClick}
-          onSelectImage={onSelectImage}
+          onSelectImage={handleLocalSelectImage}
         />
 
         <LocationCardActions
