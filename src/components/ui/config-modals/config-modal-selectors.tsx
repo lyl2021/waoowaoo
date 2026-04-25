@@ -13,10 +13,31 @@ interface RatioSelectorProps {
   options: Array<{ value: string; label: string }>
 }
 
+interface StyleOption {
+  value: string
+  label: string
+  description?: string
+}
+
+interface StyleCategory {
+  id: string
+  name: string
+}
+
+// 风格分类颜色
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  'waoo': { bg: 'bg-orange-500/20', text: 'text-orange-500', label: 'Waoo' },
+  '3d': { bg: 'bg-blue-500/20', text: 'text-blue-500', label: '3D' },
+  '2d': { bg: 'bg-green-500/20', text: 'text-green-500', label: '2D' },
+  'real': { bg: 'bg-amber-500/20', text: 'text-amber-500', label: '真' },
+  'stop_motion': { bg: 'bg-purple-500/20', text: 'text-purple-500', label: '定' },
+}
+
 interface StyleSelectorProps {
   value: string
   onChange: (value: string) => void
-  options: Array<{ value: string; label: string }>
+  options: StyleOption[]
+  categories?: StyleCategory[]
 }
 
 /** 线框比例预览块 */
@@ -104,8 +125,9 @@ export function RatioSelector({ value, onChange, options }: RatioSelectorProps) 
   )
 }
 
-export function StyleSelector({ value, onChange, options }: StyleSelectorProps) {
+export function StyleSelector({ value, onChange, options, categories }: StyleSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [hoveredStyle, setHoveredStyle] = useState<StyleOption | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -119,6 +141,25 @@ export function StyleSelector({ value, onChange, options }: StyleSelectorProps) 
   }, [])
 
   const selectedOption = options.find((option) => option.value === value) || options[0]
+  const previewOption = hoveredStyle || selectedOption
+
+  // 获取选项所属分类
+  const getOptionCategory = (optionValue: string): string => {
+    const parts = optionValue.split('_')
+    if (parts.length > 1 && categories?.some(c => c.id === parts[0])) {
+      return parts[0]
+    }
+    return 'waoo'
+  }
+
+  // 获取分类信息
+  const getCategoryInfo = (categoryId: string) => {
+    return CATEGORY_COLORS[categoryId] || CATEGORY_COLORS['waoo']
+  }
+
+  // 预览风格的分类
+  const previewCategory = getOptionCategory(previewOption?.value || '')
+  const previewCategoryInfo = getCategoryInfo(previewCategory)
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -132,30 +173,78 @@ export function StyleSelector({ value, onChange, options }: StyleSelectorProps) 
       </button>
 
       {isOpen && (
-        <div className="glass-surface-modal absolute z-50 mt-1 left-0 p-3" style={{ minWidth: '320px' }}>
-          <div className="grid grid-cols-2 gap-2">
-            {options.map((option) => {
-              const isSelected = value === option.value
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value)
-                    setIsOpen(false)
-                  }}
-                  className={`flex items-center p-3 rounded-xl border text-left transition-all ${
-                    isSelected
-                      ? 'border-[var(--glass-accent-from)] bg-[var(--glass-accent-from)]/5 shadow-sm'
-                      : 'border-[var(--glass-stroke-soft)] hover:border-[var(--glass-stroke-strong)]'
-                  }`}
-                >
-                  <span className={`text-sm whitespace-nowrap ${isSelected ? 'font-semibold text-[var(--glass-accent-from)]' : 'text-[var(--glass-text-secondary)]'}`}>
-                    {option.label}
-                  </span>
-                </button>
-              )
-            })}
+        <div className="glass-surface-modal absolute z-50 mt-1 left-0 overflow-hidden" style={{ width: 520, maxHeight: 400 }}>
+          <div className="flex h-[360px]">
+            {/* 左侧：风格列表 */}
+            <div className="w-[240px] border-r border-[var(--glass-stroke-soft)] overflow-y-auto app-scrollbar">
+              <div className="p-2">
+                {categories?.map((category) => {
+                  const categoryInfo = getCategoryInfo(category.id)
+                  const categoryOptions = options.filter(opt => getOptionCategory(opt.value) === category.id)
+                  return (
+                    <div key={category.id} className="mb-3 last:mb-0">
+                      {/* 分类标题 */}
+                      <div className="px-2 py-1.5 text-xs font-medium text-[var(--glass-text-tertiary)] border-b border-[var(--glass-stroke-soft)]/50 mb-2">
+                        {category.name}
+                      </div>
+                      {/* 风格列表 */}
+                      <div className="space-y-0.5">
+                        {categoryOptions.map((option) => {
+                          const isSelected = value === option.value
+                          const optCategoryInfo = getCategoryInfo(getOptionCategory(option.value))
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                onChange(option.value)
+                                setIsOpen(false)
+                              }}
+                              onMouseEnter={() => setHoveredStyle(option)}
+                              onMouseLeave={() => setHoveredStyle(null)}
+                              className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg transition-colors ${
+                                isSelected
+                                  ? 'bg-[var(--glass-accent-from)]/10'
+                                  : 'hover:bg-[var(--glass-bg-tertiary)]'
+                              }`}
+                            >
+                              {/* 分类色块标识 */}
+                              <span className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${optCategoryInfo.bg} ${optCategoryInfo.text}`}>
+                                {optCategoryInfo.label}
+                              </span>
+                              {/* 名称 */}
+                              <span className={`flex-1 text-left text-sm truncate ${isSelected ? 'font-medium text-[var(--glass-accent-from)]' : 'text-[var(--glass-text-primary)]'}`}>
+                                {option.label}
+                              </span>
+                              {/* 选中标记 */}
+                              {isSelected && (
+                                <AppIcon name="check" className="h-4 w-4 shrink-0 text-[var(--glass-accent-from)]" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 右侧：预览信息 */}
+            <div className="flex-1 p-4 flex flex-col">
+              {/* 预览卡片 */}
+              <div className={`flex-1 flex flex-col items-center justify-center rounded-xl mb-3 ${previewCategoryInfo.bg}`}>
+                <div className={`text-2xl font-bold mb-1 ${previewCategoryInfo.text}`}>{previewOption?.label}</div>
+                <div className="text-xs opacity-70">{previewCategoryInfo.label} · {previewOption?.value}</div>
+              </div>
+              {/* 风格描述 */}
+              <div className="text-center">
+                <div className="font-medium text-sm mb-1">{previewOption?.label}</div>
+                <div className="text-xs text-[var(--glass-text-tertiary)] line-clamp-2">
+                  {previewOption?.description || '暂无描述'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

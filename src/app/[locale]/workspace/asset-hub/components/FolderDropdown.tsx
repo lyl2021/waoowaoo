@@ -152,6 +152,12 @@ export function FolderDropdown({
                         </div>
                     ))}
 
+                    {folders.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-[var(--glass-text-tertiary)] text-center">
+                            {t('noFolders')}
+                        </div>
+                    )}
+
                     <div className="mx-3 my-1 h-px bg-[var(--glass-stroke-base)]" />
 
                     {/* 新建文件夹 */}

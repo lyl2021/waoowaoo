@@ -7,7 +7,13 @@ import { resolveTextareaTargetHeight } from '@/lib/ui/textarea-height'
 interface StoryInputComposerOption {
   value: string
   label: string
+  description?: string
   recommended?: boolean
+}
+
+interface StoryInputComposerStyleCategory {
+  id: string
+  name: string
 }
 
 interface StoryInputComposerStylePresetOption {
@@ -34,6 +40,7 @@ interface StoryInputComposerProps {
   artStyle: string
   onArtStyleChange: (value: string) => void
   styleOptions: StoryInputComposerOption[]
+  styleCategories?: StoryInputComposerStyleCategory[]
   stylePresetValue: string
   onStylePresetChange: (value: string) => void
   stylePresetOptions: readonly StoryInputComposerStylePresetOption[]
@@ -60,6 +67,7 @@ export default function StoryInputComposer({
   artStyle,
   onArtStyleChange,
   styleOptions,
+  styleCategories,
   stylePresetValue,
   onStylePresetChange,
   stylePresetOptions,
@@ -144,6 +152,7 @@ export default function StoryInputComposer({
               value={artStyle}
               onChange={onArtStyleChange}
               options={styleOptions}
+              categories={styleCategories}
             />
           </div>
           {stylePresetOptions.length > 0 ? (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
     ART_STYLES,
+    ART_STYLE_CATEGORIES,
     VIDEO_RATIOS,
 } from '@/lib/constants'
 import type {
@@ -374,6 +375,7 @@ export function SettingsModal({
                                     value={artStyle}
                                     onChange={(value) => handleChange(onArtStyleChange)(value)}
                                     options={ART_STYLES}
+                                    categories={ART_STYLE_CATEGORIES}
                                 />
                             </div>
                             <div className="space-y-2">

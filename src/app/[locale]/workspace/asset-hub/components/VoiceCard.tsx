@@ -65,9 +65,6 @@ export function VoiceCard({ voice, onSelect, isSelected = false, selectionMode =
         }
     }
 
-    // 性别图标
-    const genderIcon = voice.gender === 'male' ? 'M' : voice.gender === 'female' ? 'F' : ''
-
     return (
         <div
             onClick={handleCardClick}
@@ -81,24 +78,13 @@ export function VoiceCard({ voice, onSelect, isSelected = false, selectionMode =
                 </div>
             )}
 
-            {/* 音色图标区域 */}
-            <div className="relative bg-[var(--glass-bg-muted)] p-6 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full glass-surface-soft flex items-center justify-center">
-                    <AppIcon name="mic" className="w-8 h-8 text-[var(--glass-tone-info-fg)]" />
-                </div>
-
-                {/* 性别标签 */}
-                {genderIcon && (
-                    <div className="absolute top-2 left-2 glass-chip glass-chip-neutral text-xs px-2 py-0.5 rounded-full">
-                        {genderIcon}
-                    </div>
-                )}
-
-                {/* 试听按钮 */}
-                {voice.customVoiceUrl && (
+            {/* 音色卡片：紧凑行布局 */}
+            <div className="flex items-center gap-3 p-3">
+                {/* 播放按钮 */}
+                {voice.customVoiceUrl ? (
                     <button
                         onClick={(e) => { e.stopPropagation(); handlePlay() }}
-                        className={`absolute bottom-2 right-2 w-10 h-10 rounded-full glass-btn-base flex items-center justify-center transition-all ${isPlaying
+                        className={`w-10 h-10 rounded-full glass-btn-base flex items-center justify-center shrink-0 transition-all ${isPlaying
                             ? 'glass-btn-tone-info animate-pulse'
                             : 'glass-btn-secondary text-[var(--glass-tone-info-fg)]'
                             }`}
@@ -109,28 +95,32 @@ export function VoiceCard({ voice, onSelect, isSelected = false, selectionMode =
                             <AppIcon name="play" className="w-5 h-5" />
                         )}
                     </button>
+                ) : (
+                    <div className="w-10 h-10 rounded-full bg-[var(--glass-bg-muted)] flex items-center justify-center shrink-0">
+                        <AppIcon name="play" className="w-5 h-5 text-[var(--glass-text-tertiary)]" />
+                    </div>
                 )}
-            </div>
 
-            {/* 信息区域 */}
-            <div className="p-3">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{voice.name}</h3>
-                    {!selectionMode && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
-                            className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md text-[var(--glass-tone-danger-fg)] flex items-center justify-center opacity-0 group-hover:opacity-100"
-                        >
-                            <AppIcon name="trash" className="w-4 h-4" />
-                        </button>
+                {/* 名称和描述 */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{voice.name}</h3>
+                        {!selectionMode && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
+                                className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md text-[var(--glass-tone-danger-fg)] flex items-center justify-center opacity-0 group-hover:opacity-100 shrink-0"
+                            >
+                                <AppIcon name="trash" className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                    {voice.description && (
+                        <p className="mt-0.5 text-xs text-[var(--glass-text-secondary)] line-clamp-2">{voice.description}</p>
+                    )}
+                    {voice.voicePrompt && !voice.description && (
+                        <p className="mt-0.5 text-xs text-[var(--glass-text-tertiary)] line-clamp-2 italic">{voice.voicePrompt}</p>
                     )}
                 </div>
-                {voice.description && (
-                    <p className="mt-1 text-xs text-[var(--glass-text-secondary)] line-clamp-2">{voice.description}</p>
-                )}
-                {voice.voicePrompt && !voice.description && (
-                    <p className="mt-1 text-xs text-[var(--glass-text-tertiary)] line-clamp-2 italic">{voice.voicePrompt}</p>
-                )}
             </div>
 
             {/* 删除确认 */}

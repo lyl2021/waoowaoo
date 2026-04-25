@@ -4,6 +4,9 @@ import { apiFetch } from '@/lib/api-fetch'
 import JSZip from 'jszip'
 
 import { useState } from 'react'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { FolderDropdown } from './components/FolderDropdown'
+import { AddAssetDropdown } from './components/AddAssetDropdown'
 import { useTranslations } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
 import Navbar from '@/components/Navbar'
@@ -75,6 +78,7 @@ export default function AssetHubPage() {
     const [showAddVoice, setShowAddVoice] = useState(false)
     const [voicePickerCharacterId, setVoicePickerCharacterId] = useState<string | null>(null)
     const [isDownloading, setIsDownloading] = useState(false)
+    const [filter, setFilter] = useState<'all' | 'character' | 'location' | 'prop' | 'voice'>('all')
 
 
     // 编辑角色弹窗状态
@@ -449,13 +453,29 @@ export default function AssetHubPage() {
         }
     }
 
+    const totalCount = assets.length
+    const characterCount = assets.filter(a => a.kind === 'character').length
+    const locationCount = assets.filter(a => a.kind === 'location').length
+    const propCount = assets.filter(a => a.kind === 'prop').length
+    const voiceCount = assets.filter(a => a.kind === 'voice').length
+
+    const tabs = [
+        { value: 'all', label: `${t('allAssets')} [${totalCount}]` },
+        { value: 'character', label: `${t('characters')} [${characterCount}]` },
+        { value: 'location', label: `${t('locations')} [${locationCount}]` },
+        { value: 'prop', label: `${t('props')} [${propCount}]` },
+        { value: 'voice', label: `${t('voices')} [${voiceCount}]` },
+    ]
+
     return (
-        <div className="glass-page min-h-screen">
+        <div className="glass-page h-screen flex flex-col">
             <Navbar />
-            <div className="px-4 sm:px-6 lg:px-6 py-6">
-                {/* 页面标题 */}
-                <div className="mb-6">
-                    <div className="flex items-start gap-4">
+
+            {/* 固定头部：标题 + 工具栏 */}
+            <div className="shrink-0 px-4 sm:px-6 lg:px-6 pt-6 pb-4 border-b border-[var(--glass-stroke-base)]">
+                <div className="flex items-start justify-between gap-6">
+                    {/* 左侧：标题 */}
+                    <div className="flex items-start gap-4 min-w-0">
                         <h1 className="text-2xl font-bold text-[var(--glass-text-primary)] whitespace-nowrap">{t('title')}</h1>
                         <div>
                             <p className="text-sm text-[var(--glass-text-secondary)]">{t('description')}</p>
@@ -467,29 +487,61 @@ export default function AssetHubPage() {
                             </p>
                         </div>
                     </div>
-                </div>
 
+                    {/* 右侧：工具栏（文件夹 + 筛选 + 下载 + 新建） */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        <FolderDropdown
+                            folders={folders}
+                            selectedFolderId={selectedFolderId}
+                            onSelectFolder={setSelectedFolderId}
+                            onCreateFolder={() => {
+                                setEditingFolder(null)
+                                setShowFolderModal(true)
+                            }}
+                            onEditFolder={(folder) => {
+                                setEditingFolder(folder)
+                                setShowFolderModal(true)
+                            }}
+                            onDeleteFolder={handleDeleteFolder}
+                        />
+                        <SegmentedControl
+                            options={tabs}
+                            value={filter}
+                            onChange={(val) => setFilter(val as 'all' | 'character' | 'location' | 'prop' | 'voice')}
+                            layout="compact"
+                            className="min-w-max"
+                        />
+                        {assets.length > 0 && (
+                            <button
+                                onClick={handleDownloadAll}
+                                disabled={isDownloading}
+                                title={t('downloadAllTitle')}
+                                className="glass-btn-base glass-btn-secondary px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <AppIcon name={isDownloading ? 'refresh' : 'download'} className={`w-4 h-4 ${isDownloading ? 'animate-spin' : ''}`} />
+                                <span>{isDownloading ? t('downloading') : t('downloadAll')}</span>
+                            </button>
+                        )}
+                        <AddAssetDropdown
+                            onAddCharacter={() => setShowAddCharacter(true)}
+                            onAddLocation={() => setShowAddLocation(true)}
+                            onAddProp={() => setShowAddProp(true)}
+                            onAddVoice={() => setShowAddVoice(true)}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* 可滚动卡片区域 */}
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-6 pt-4 pb-6">
                 <AssetGrid
                     assets={assets}
                     loading={loading}
-                    folders={folders}
-                    selectedFolderId={selectedFolderId}
-                    onSelectFolder={setSelectedFolderId}
-                    onCreateFolder={() => {
-                        setEditingFolder(null)
-                        setShowFolderModal(true)
-                    }}
-                    onEditFolder={(folder) => {
-                        setEditingFolder(folder)
-                        setShowFolderModal(true)
-                    }}
-                    onDeleteFolder={handleDeleteFolder}
+                    filter={filter}
                     onAddCharacter={() => setShowAddCharacter(true)}
                     onAddLocation={() => setShowAddLocation(true)}
                     onAddProp={() => setShowAddProp(true)}
                     onAddVoice={() => setShowAddVoice(true)}
-                    onDownloadAll={handleDownloadAll}
-                    isDownloading={isDownloading}
                     onImageClick={setPreviewImage}
                     onImageEdit={handleOpenImageEdit}
                     onVoiceDesign={handleOpenVoiceDesign}

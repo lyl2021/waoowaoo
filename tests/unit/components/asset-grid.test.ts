@@ -92,15 +92,10 @@ describe('AssetGrid', () => {
         onAddLocation: () => undefined,
         onAddProp: () => undefined,
         onAddVoice: () => undefined,
-        onDownloadAll: () => undefined,
-        isDownloading: false,
-        selectedFolderId: null,
+        filter: 'all',
       }),
     )
 
-    expect(html).toContain('inline-block max-w-full min-w-max')
-    expect(html).toContain('inline-grid grid-flow-col auto-cols-[minmax(96px,max-content)]')
-    expect(html).toContain('justify-center')
     expect(html).toContain('>新建资产<')
   })
 
@@ -147,9 +142,7 @@ describe('AssetGrid', () => {
         onAddLocation: () => undefined,
         onAddProp: () => undefined,
         onAddVoice: () => undefined,
-        onDownloadAll: () => undefined,
-        isDownloading: false,
-        selectedFolderId: null,
+        filter: 'all',
       }),
     )
 

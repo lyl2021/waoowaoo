@@ -403,7 +403,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
             <input ref={voiceInputRef} type="file" accept="audio/*" onChange={handleUploadVoice} className="hidden" />
 
             {/* 图片区域 */}
-            <div className="relative aspect-square bg-[var(--glass-bg-muted)] p-3">
+            <div className="relative aspect-square bg-[var(--glass-bg-muted)]">
                 {displayImageUrl ? (
                     <>
                         <MediaImageWithLoading

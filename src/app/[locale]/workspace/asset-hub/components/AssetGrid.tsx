@@ -1,33 +1,24 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { CharacterCard } from './CharacterCard'
 import { LocationCard } from './LocationCard'
 import { VoiceCard } from './VoiceCard'
-import { FolderDropdown } from './FolderDropdown'
 import TaskStatusInline from '@/components/task/TaskStatusInline'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
+import { AddAssetDropdown } from './AddAssetDropdown'
 import { AppIcon } from '@/components/ui/icons'
-import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { groupAssetsByKind } from '@/lib/assets/grouping'
 import type { AssetSummary } from '@/lib/assets/contracts'
 interface AssetGridProps {
     assets: AssetSummary[]
     loading: boolean
+    filter: 'all' | 'character' | 'location' | 'prop' | 'voice'
     onAddCharacter: () => void
     onAddLocation: () => void
     onAddProp: () => void
     onAddVoice: () => void
-    onDownloadAll?: () => void
-    isDownloading?: boolean
-    selectedFolderId: string | null
-    folders?: Array<{ id: string; name: string }>
-    onSelectFolder?: (folderId: string | null) => void
-    onCreateFolder?: () => void
-    onEditFolder?: (folder: { id: string; name: string }) => void
-    onDeleteFolder?: (folderId: string) => void
     onImageClick?: (url: string) => void
     onImageEdit?: (type: 'character' | 'location' | 'prop', id: string, name: string, imageIndex: number, appearanceIndex?: number) => void
     onVoiceDesign?: (characterId: string, characterName: string) => void
@@ -37,116 +28,14 @@ interface AssetGridProps {
     onVoiceSelect?: (characterId: string) => void
 }
 
-// ─── 新建资产下拉菜单 ──────────────────────────────────
-function AddAssetDropdown({
-    onAddCharacter,
-    onAddLocation,
-    onAddProp,
-    onAddVoice,
-}: {
-    onAddCharacter: () => void
-    onAddLocation: () => void
-    onAddProp: () => void
-    onAddVoice: () => void
-}) {
-    const t = useTranslations('assetHub')
-    const [open, setOpen] = useState(false)
-    const triggerRef = useRef<HTMLButtonElement>(null)
-    const menuRef = useRef<HTMLDivElement>(null)
-    const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null)
-
-    const updatePosition = useCallback(() => {
-        if (!triggerRef.current) return
-        const rect = triggerRef.current.getBoundingClientRect()
-        setMenuPos({
-            top: rect.bottom + 6,
-            right: window.innerWidth - rect.right,
-        })
-    }, [])
-
-    useEffect(() => {
-        if (!open) return
-        updatePosition()
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                triggerRef.current?.contains(e.target as Node) ||
-                menuRef.current?.contains(e.target as Node)
-            ) return
-            setOpen(false)
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [open, updatePosition])
-
-    const handleSelect = (action: () => void) => {
-        setOpen(false)
-        action()
-    }
-
-    const menuItems = [
-        { label: t('addCharacter'), icon: 'user' as const, action: onAddCharacter },
-        { label: t('addLocation'), icon: 'image' as const, action: onAddLocation },
-        { label: t('addProp'), icon: 'diamond' as const, action: onAddProp },
-        { label: t('addVoice'), icon: 'mic' as const, action: onAddVoice },
-    ]
-
-    return (
-        <>
-            <button
-                ref={triggerRef}
-                onClick={() => setOpen((prev) => !prev)}
-                className="glass-btn-base glass-btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-1.5"
-            >
-                <AppIcon name="plus" className="w-4 h-4" />
-                <span>{t('addAsset')}</span>
-                <AppIcon
-                    name="chevronDown"
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                />
-            </button>
-            {open && menuPos && createPortal(
-                <div
-                    ref={menuRef}
-                    className="fixed z-[9999] min-w-[160px] py-1.5 rounded-xl bg-white dark:bg-[#2c2c2e] shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)] border border-[var(--glass-stroke-base)] animate-in fade-in-0 zoom-in-95 duration-150"
-                    style={{ top: menuPos.top, right: menuPos.right }}
-                >
-                    {menuItems.map((item) => (
-                        <button
-                            key={item.label}
-                            onClick={() => handleSelect(item.action)}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--glass-text-primary)] hover:bg-[var(--glass-bg-muted)] transition-colors cursor-pointer"
-                        >
-                            <AppIcon name={item.icon} className="w-4 h-4 text-[var(--glass-text-tertiary)]" />
-                            <span>{item.label}</span>
-                        </button>
-                    ))}
-                </div>,
-                document.body,
-            )}
-        </>
-    )
-}
-
-// 内联 SVG 图标
-const PlusIcon = ({ className }: { className?: string }) => (
-    <AppIcon name="plus" className={className} />
-)
-
 export function AssetGrid({
     assets,
     loading,
+    filter,
     onAddCharacter,
     onAddLocation,
     onAddProp,
     onAddVoice,
-    onDownloadAll,
-    isDownloading,
-    selectedFolderId,
-    folders,
-    onSelectFolder,
-    onCreateFolder,
-    onEditFolder,
-    onDeleteFolder,
     onImageClick,
     onImageEdit,
     onVoiceDesign,
@@ -165,7 +54,7 @@ export function AssetGrid({
         })
         : null
 
-    const [filter, setFilter] = useState<'all' | 'character' | 'location' | 'prop' | 'voice'>('all')
+    // filter now comes from props
     const [sectionPage, setSectionPage] = useState<{ character: number; location: number; prop: number; voice: number }>({
         character: 1,
         location: 1,
@@ -308,66 +197,13 @@ export function AssetGrid({
         }
     })()
 
-    const tabs = [
-        { id: 'all', label: t('allAssets') },
-        { id: 'character', label: t('characters') },
-        { id: 'location', label: t('locations') },
-        { id: 'prop', label: t('props') },
-        { id: 'voice', label: t('voices') },
-    ]
-
     return (
         <div className="w-full">
-            {/* Header: 文件夹下拉 + 筛选 Tab + 操作按钮 */}
-            <div className="flex items-center justify-between mb-6">
-                {/* 左侧: 文件夹下拉 + 筛选 */}
-                <div className="flex items-center gap-3">
-                    {folders && onSelectFolder && (
-                        <FolderDropdown
-                            folders={folders}
-                            selectedFolderId={selectedFolderId}
-                            onSelectFolder={onSelectFolder}
-                            onCreateFolder={onCreateFolder || (() => {})}
-                            onEditFolder={onEditFolder || (() => {})}
-                            onDeleteFolder={onDeleteFolder || (() => {})}
-                        />
-                    )}
-                    <SegmentedControl
-                        options={tabs.map(tab => ({ value: tab.id, label: tab.label }))}
-                        value={filter}
-                        onChange={(val) => setFilter(val as 'all' | 'character' | 'location' | 'prop' | 'voice')}
-                        layout="compact"
-                        className="min-w-max"
-                    />
-                </div>
-
-                {/* 右侧操作按钮 */}
-                <div className="flex items-center gap-3">
-                    {onDownloadAll && (
-                        <button
-                            onClick={onDownloadAll}
-                            disabled={isDownloading || isEmpty}
-                            title={t('downloadAllTitle')}
-                            className="glass-btn-base glass-btn-secondary px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <AppIcon name={isDownloading ? 'refresh' : 'download'} className={`w-4 h-4 ${isDownloading ? 'animate-spin' : ''}`} />
-                            <span>{isDownloading ? t('downloading') : t('downloadAll')}</span>
-                        </button>
-                    )}
-                    <AddAssetDropdown
-                        onAddCharacter={onAddCharacter}
-                        onAddLocation={onAddLocation}
-                        onAddProp={onAddProp}
-                        onAddVoice={onAddVoice}
-                    />
-                </div>
-            </div>
-
             {isEmpty ? (
                 /* 空状态 */
                 <div className="glass-surface rounded-xl p-12 text-center">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--glass-bg-muted)] flex items-center justify-center">
-                        <PlusIcon className="w-8 h-8 text-[var(--glass-text-tertiary)]" />
+                        <AppIcon name="plus" className="w-8 h-8 text-[var(--glass-text-tertiary)]" />
                     </div>
                     <p className="text-[var(--glass-text-secondary)] mb-2">{t('emptyState')}</p>
                     <p className="text-sm text-[var(--glass-text-tertiary)]">{t('emptyStateHint')}</p>
@@ -387,14 +223,11 @@ export function AssetGrid({
                     </p>
                 </div>
             ) : (
-                <div className="space-y-8">
+                <div className={filter === 'all' ? '[&>section]:pb-6 [&>section+section]:border-t-2 [&>section+section]:border-[var(--glass-stroke-base)] [&>section+section]:pt-6' : ''}>
                     {/* 角色区块 */}
                     {(filter === 'all' || filter === 'character') && characters.length > 0 && (
                         <section>
-                            <h2 className="text-sm font-semibold text-[var(--glass-text-primary)] mb-3 flex items-center gap-2">
-                                {t('characters')}
-                                <span className="glass-chip glass-chip-neutral px-2 py-0.5">{characters.length}</span>
-                            </h2>
+
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 3xl:grid-cols-8 gap-4">
                                 {charactersPage.items.map((character) => (
                                     <CharacterCard
@@ -415,10 +248,7 @@ export function AssetGrid({
                     {/* 场景区块 */}
                     {(filter === 'all' || filter === 'location') && locations.length > 0 && (
                         <section>
-                            <h2 className="text-sm font-semibold text-[var(--glass-text-primary)] mb-3 flex items-center gap-2">
-                                {t('locations')}
-                                <span className="glass-chip glass-chip-neutral px-2 py-0.5">{locations.length}</span>
-                            </h2>
+
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 3xl:grid-cols-6 gap-4">
                                 {locationsPage.items.map((location) => (
                                     <LocationCard
@@ -436,11 +266,8 @@ export function AssetGrid({
 
                     {(filter === 'all' || filter === 'prop') && props.length > 0 && (
                         <section>
-                            <h2 className="text-sm font-semibold text-[var(--glass-text-primary)] mb-3 flex items-center gap-2">
-                                {t('props')}
-                                <span className="glass-chip glass-chip-neutral px-2 py-0.5">{props.length}</span>
-                            </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 3xl:grid-cols-6 gap-4">
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 3xl:grid-cols-8 gap-4">
                                 {propsPage.items.map((prop) => (
                                     <LocationCard
                                         key={prop.id}
@@ -459,10 +286,7 @@ export function AssetGrid({
                     {/* 音色区块 */}
                     {(filter === 'all' || filter === 'voice') && voices.length > 0 && (
                         <section>
-                            <h2 className="text-sm font-semibold text-[var(--glass-text-primary)] mb-3 flex items-center gap-2">
-                                {t('voices')}
-                                <span className="glass-chip glass-chip-info px-2 py-0.5">{voices.length}</span>
-                            </h2>
+
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4">
                                 {voicesPage.items.map((voice) => (
                                     <VoiceCard

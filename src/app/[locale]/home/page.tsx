@@ -11,7 +11,7 @@ import Navbar from '@/components/Navbar'
 import { AppIcon, IconGradientDefs } from '@/components/ui/icons'
 import StoryInputComposer from '@/components/story-input/StoryInputComposer'
 import TypewriterHero from '@/components/home/TypewriterHero'
-import { ART_STYLES, VIDEO_RATIOS } from '@/lib/constants'
+import { ART_STYLES, ART_STYLE_CATEGORIES, VIDEO_RATIOS } from '@/lib/constants'
 import { DEFAULT_STYLE_PRESET_VALUE, STYLE_PRESETS } from '@/lib/style-presets'
 import { Link, useRouter } from '@/i18n/navigation'
 import { apiFetch } from '@/lib/api-fetch'
@@ -265,6 +265,7 @@ export default function HomePage() {
               artStyle={artStyle}
               onArtStyleChange={setArtStyle}
               styleOptions={styleOptions}
+              styleCategories={ART_STYLE_CATEGORIES}
               stylePresetValue={stylePresetValue}
               onStylePresetChange={setStylePresetValue}
               stylePresetOptions={STYLE_PRESETS}
