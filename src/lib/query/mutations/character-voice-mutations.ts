@@ -8,7 +8,7 @@ import {
 export function useUploadProjectCharacterVoice(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({ file, characterId }: { file: File; characterId: string }) => {
@@ -28,7 +28,7 @@ export function useUploadProjectCharacterVoice(projectId: string) {
 export function useUpdateProjectCharacterVoiceSettings(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
     return useMutation({
         mutationFn: async ({
             characterId,
@@ -65,7 +65,7 @@ export function useUpdateProjectCharacterVoiceSettings(projectId: string) {
 export function useSaveProjectDesignedVoice(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({

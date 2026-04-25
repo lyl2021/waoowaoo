@@ -3,6 +3,7 @@ import { logError as _ulogError } from '@/lib/logging/core'
 import type { Project } from '@/types/project'
 import { queryKeys } from '../keys'
 import type { ProjectAssetsData } from '../hooks/useProjectAssets'
+import type { AssetSummary } from '@/lib/assets/contracts'
 import type { LocationAvailableSlot } from '@/lib/location-available-slots'
 import { resolveTaskResponse } from '@/lib/task/client'
 import { apiFetch } from '@/lib/api-fetch'
@@ -20,6 +21,10 @@ import {
 interface DeleteProjectLocationContext {
     previousAssets: ProjectAssetsData | undefined
     previousProject: Project | undefined
+    previousAssetListSnapshots: Array<{
+        queryKey: readonly unknown[]
+        data: AssetSummary[] | undefined
+    }>
 }
 
 function removeLocationFromAssets(
@@ -50,8 +55,6 @@ function removeLocationFromProject(
 
 export function useDeleteProjectLocation(projectId: string) {
     const queryClient = useQueryClient()
-    const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
 
     return useMutation({
         mutationFn: async (locationId: string) => {
@@ -64,12 +67,16 @@ export function useDeleteProjectLocation(projectId: string) {
         onMutate: async (locationId): Promise<DeleteProjectLocationContext> => {
             const assetsQueryKey = queryKeys.projectAssets.all(projectId)
             const projectQueryKey = queryKeys.projectData(projectId)
+            const assetsParentKey = queryKeys.assets.all('project', projectId)
 
             await queryClient.cancelQueries({ queryKey: assetsQueryKey })
             await queryClient.cancelQueries({ queryKey: projectQueryKey })
 
             const previousAssets = queryClient.getQueryData<ProjectAssetsData>(assetsQueryKey)
             const previousProject = queryClient.getQueryData<Project>(projectQueryKey)
+            const previousAssetListSnapshots = queryClient
+                .getQueriesData<AssetSummary[]>({ queryKey: assetsParentKey, exact: false })
+                .map(([queryKey, data]) => ({ queryKey, data }))
 
             queryClient.setQueryData<ProjectAssetsData | undefined>(assetsQueryKey, (previous) =>
                 removeLocationFromAssets(previous, locationId),
@@ -77,18 +84,32 @@ export function useDeleteProjectLocation(projectId: string) {
             queryClient.setQueryData<Project | undefined>(projectQueryKey, (previous) =>
                 removeLocationFromProject(previous, locationId),
             )
+            // 同步更新所有 assets.list 系列缓存
+            queryClient.setQueriesData<AssetSummary[] | undefined>(
+                { queryKey: assetsParentKey, exact: false },
+                (previous) => previous?.filter((asset) => !(asset.kind === 'location' && asset.id === locationId)),
+            )
 
             return {
                 previousAssets,
                 previousProject,
+                previousAssetListSnapshots,
             }
         },
         onError: (_error, _locationId, context) => {
             if (!context) return
             queryClient.setQueryData(queryKeys.projectAssets.all(projectId), context.previousAssets)
             queryClient.setQueryData(queryKeys.projectData(projectId), context.previousProject)
+            context.previousAssetListSnapshots.forEach((snapshot) => {
+                queryClient.setQueryData(snapshot.queryKey, snapshot.data)
+            })
         },
-        onSettled: invalidateProjectAssets,
+        onSettled: () => {
+            invalidateQueryTemplates(queryClient, [
+                queryKeys.projectAssets.all(projectId),
+                queryKeys.assets.all('project', projectId),
+            ])
+        },
     })
 }
 
@@ -99,7 +120,7 @@ export function useDeleteProjectLocation(projectId: string) {
 export function useUpdateProjectLocationName(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({ locationId, name }: { locationId: string; name: string }) => {
@@ -143,7 +164,7 @@ export function useUpdateProjectLocationName(projectId: string) {
 export function useUpdateProjectLocationDescription(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -268,7 +289,7 @@ export function useAiCreateProjectLocation(projectId: string) {
 export function useCreateProjectLocation(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async (payload: {
@@ -301,7 +322,7 @@ export function useConfirmProjectLocationSelection(
 ) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
     return useMutation({
         mutationFn: async ({ locationId }: { locationId: string }) =>
             await requestJsonWithError(
@@ -366,7 +387,7 @@ export function useBatchGenerateLocationImages(projectId: string) {
             }
         },
         onSettled: () => {
-            invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+            invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
         }
     })
 }

@@ -18,6 +18,7 @@ export function useModifyProjectCharacterImage(projectId: string) {
         invalidateQueryTemplates(queryClient, [
             queryKeys.projectAssets.all(projectId),
             queryKeys.projectData(projectId),
+            queryKeys.assets.all('project', projectId),
         ])
 
     return useMutation({
@@ -66,7 +67,7 @@ export function useModifyProjectCharacterImage(projectId: string) {
 export function useRegenerateCharacterGroup(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -116,7 +117,7 @@ export function useRegenerateCharacterGroup(projectId: string) {
 export function useRegenerateSingleCharacterImage(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -166,7 +167,7 @@ export function useRegenerateSingleCharacterImage(projectId: string) {
 export function useUpdateProjectAppearanceDescription(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -237,7 +238,7 @@ export function useBatchGenerateCharacterImages(projectId: string) {
             }
         },
         onSettled: () => {
-            invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+            invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
         }
     })
 }

@@ -100,7 +100,7 @@ function applyLocationSelectionToProject(
 export function useGenerateProjectLocationImage(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -169,7 +169,7 @@ export function buildProjectLocationGenerateImageBody(input: {
 export function useUploadProjectLocationImage(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -253,7 +253,7 @@ export function useModifyProjectLocationImage(projectId: string) {
 export function useRegenerateLocationGroup(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({ locationId, count }: { locationId: string; count?: number }) => {
@@ -294,7 +294,7 @@ export function useRegenerateLocationGroup(projectId: string) {
 export function useRegenerateSingleLocationImage(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({ locationId, imageIndex }: { locationId: string; imageIndex: number }) => {
@@ -336,7 +336,7 @@ export function useSelectProjectLocationImage(projectId: string) {
     const queryClient = useQueryClient()
     const latestRequestIdByTargetRef = useRef<Record<string, number>>({})
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async ({
@@ -418,7 +418,7 @@ export function useSelectProjectLocationImage(projectId: string) {
 export function useUndoProjectLocationImage(projectId: string) {
     const queryClient = useQueryClient()
     const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
+        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId), queryKeys.assets.all('project', projectId)])
 
     return useMutation({
         mutationFn: async (locationId: string) => {

@@ -3,7 +3,6 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import mysql from 'mysql2/promise'
 import Redis from 'ioredis'
 import { loadTestEnv } from './env'
-import { runGlobalTeardown } from './global-teardown'
 
 function parseDbUrl(dbUrl: string) {
   const url = new URL(dbUrl)
@@ -16,7 +15,34 @@ function parseDbUrl(dbUrl: string) {
   }
 }
 
-async function waitForMysql(maxAttempts = 180) {
+async function ensureTestDatabase() {
+  const db = parseDbUrl(process.env.DATABASE_URL || '')
+
+  for (let attempt = 1; attempt <= 30; attempt += 1) {
+    try {
+      const conn = await mysql.createConnection({
+        host: db.host,
+        port: db.port,
+        user: db.user,
+        password: db.password,
+        connectTimeout: 5_000,
+      })
+      await conn.query(`CREATE DATABASE IF NOT EXISTS \`${db.database}\``)
+      await conn.end()
+      return
+    } catch {
+      await sleep(1_000)
+    }
+  }
+
+  throw new Error(
+    `MySQL 未就绪。请确保主容器正在运行:\n` +
+    `  docker compose up -d mysql redis\n` +
+    `然后重试。`,
+  )
+}
+
+async function waitForMysql(maxAttempts = 60) {
   const db = parseDbUrl(process.env.DATABASE_URL || '')
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -37,13 +63,13 @@ async function waitForMysql(maxAttempts = 180) {
     }
   }
 
-  throw new Error('MySQL test service did not become ready in time')
+  throw new Error(`MySQL 测试数据库 (${db.database}) 未就绪`)
 }
 
-async function waitForRedis(maxAttempts = 60) {
+async function waitForRedis(maxAttempts = 30) {
   const redis = new Redis({
     host: process.env.REDIS_HOST || '127.0.0.1',
-    port: Number(process.env.REDIS_PORT || '6380'),
+    port: Number(process.env.REDIS_PORT || '6379'),
     maxRetriesPerRequest: 1,
     lazyConnect: true,
   })
@@ -64,7 +90,11 @@ async function waitForRedis(maxAttempts = 60) {
     redis.disconnect()
   }
 
-  throw new Error('Redis test service did not become ready in time')
+  throw new Error(
+    `Redis 未就绪。请确保主容器正在运行:\n` +
+    `  docker compose up -d redis\n` +
+    `然后重试。`,
+  )
 }
 
 export default async function globalSetup() {
@@ -75,25 +105,21 @@ export default async function globalSetup() {
     return async () => {}
   }
 
-  execSync('docker compose -f docker-compose.test.yml down -v --remove-orphans', {
-    cwd: process.cwd(),
-    stdio: 'inherit',
-  })
+  // 在主 MySQL 容器中创建测试数据库（如已存在则跳过）
+  await ensureTestDatabase()
 
-  execSync('docker compose -f docker-compose.test.yml up -d --remove-orphans', {
-    cwd: process.cwd(),
-    stdio: 'inherit',
-  })
-
+  // 等待 MySQL 和 Redis 就绪
   await waitForMysql()
   await waitForRedis()
 
+  // 在测试数据库上运行 Prisma migration
   execSync('npx prisma db push --skip-generate --schema prisma/schema.prisma', {
     cwd: process.cwd(),
     stdio: 'inherit',
   })
 
   return async () => {
+    const { runGlobalTeardown } = await import('./global-teardown')
     await runGlobalTeardown()
   }
 }

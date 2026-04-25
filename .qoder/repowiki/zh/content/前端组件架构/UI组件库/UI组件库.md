@@ -13,8 +13,20 @@
 - [src/components/ui/primitives/GlassSurface.tsx](file://src/components/ui/primitives/GlassSurface.tsx)
 - [src/components/ui/primitives/GlassChip.tsx](file://src/components/ui/primitives/GlassChip.tsx)
 - [src/components/ui/primitives/GlassModalShell.tsx](file://src/components/ui/primitives/GlassModalShell.tsx)
+- [src/components/ui/ImagePreviewModal.tsx](file://src/components/ui/ImagePreviewModal.tsx)
+- [src/components/media/MediaImageWithLoading.tsx](file://src/components/media/MediaImageWithLoading.tsx)
+- [src/components/ui/icons/AppIcon.tsx](file://src/components/ui/icons/AppIcon.tsx)
+- [src/lib/media/image-url.ts](file://src/lib/media/image-url.ts)
+- [src/components/ui/SharedComponents.tsx](file://src/components/ui/SharedComponents.tsx)
 - [src/components/selectors/RatioStyleSelectors.tsx](file://src/components/selectors/RatioStyleSelectors.tsx)
 </cite>
+
+## 更新摘要
+**所做更改**   
+- 新增 ImagePreviewModal 组件的详细文档说明
+- 更新组件组合模式，增加图片预览组件的使用指导
+- 增强整体UI一致性提升的相关内容
+- 补充图片预览功能的视觉设计优化说明
 
 ## 目录
 1. [简介](#简介)
@@ -29,10 +41,10 @@
 10. [附录](#附录)
 
 ## 简介
-本文件为 Waoowaoo 的 UI 组件库技术文档，聚焦 Glass UI 设计系统，系统性阐述玻璃拟态（Glassmorphism）风格的视觉与交互实现。内容涵盖基础组件（如 GlassButton、GlassInput、GlassModalShell 等）的设计理念、属性配置、事件处理与状态管理；提供组件组合模式与复用策略；说明响应式设计、主题定制与样式覆盖方法，并给出实际使用示例与最佳实践。
+本文件为 Waoowaoo 的 UI 组件库技术文档，聚焦 Glass UI 设计系统，系统性阐述玻璃拟态（Glassmorphism）风格的视觉与交互实现。内容涵盖基础组件（如 GlassButton、GlassInput、GlassModalShell 等）的设计理念、属性配置、事件处理与状态管理；新增 ImagePreviewModal 图片预览组件的详细说明；提供组件组合模式与复用策略；说明响应式设计、主题定制与样式覆盖方法，并给出实际使用示例与最佳实践。
 
 ## 项目结构
-UI 组件库位于 src/components/ui/primitives，配套样式由两部分构成：语义层样式（ui-semantic-glass.css）定义可复用的视觉类名与交互态；令牌层样式（ui-tokens-glass.css）定义变量与预设。全局样式入口（globals.css）引入上述样式并桥接至 Tailwind 与主题变量。
+UI 组件库位于 src/components/ui/primitives，配套样式由两部分构成：语义层样式（ui-semantic-glass.css）定义可复用的视觉类名与交互态；令牌层样式（ui-tokens-glass.css）定义变量与预设。全局样式入口（globals.css）引入上述样式并桥接至 Tailwind 与主题变量。新增的 ImagePreviewModal 作为独立组件提供图片预览功能。
 
 ```mermaid
 graph TB
@@ -45,15 +57,22 @@ D --> H["GlassField"]
 D --> I["GlassSurface"]
 D --> J["GlassChip"]
 D --> K["GlassModalShell"]
+L["图片预览组件<br/>ImagePreviewModal"] --> M["MediaImageWithLoading"]
+L --> N["AppIcon"]
+L --> O["image-url 工具"]
 ```
 
-图表来源
+**图表来源**
 - [src/app/globals.css:1-5](file://src/app/globals.css#L1-L5)
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
+- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/media/MediaImageWithLoading.tsx:1-92](file://src/components/media/MediaImageWithLoading.tsx#L1-L92)
+- [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
+- [src/lib/media/image-url.ts:1-90](file://src/lib/media/image-url.ts#L1-L90)
 
-章节来源
+**章节来源**
 - [src/app/globals.css:1-523](file://src/app/globals.css#L1-L523)
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
@@ -66,8 +85,9 @@ D --> K["GlassModalShell"]
 - GlassButton：按钮组件，支持主次/幽灵/危险等变体、尺寸、加载态与图标插槽。
 - GlassChip：信息展示与可选移除的标签式组件，支持五种语义色调。
 - GlassModalShell：模态壳体，支持尺寸、遮罩关闭、Esc 关闭、标题/描述/页脚区域与 Portal 渲染。
+- **ImagePreviewModal**：图片预览组件，提供全屏图片查看、原始图片链接、关闭功能与滚动控制。
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassSurface.tsx:1-47](file://src/components/ui/primitives/GlassSurface.tsx#L1-L47)
 - [src/components/ui/primitives/GlassField.tsx:1-50](file://src/components/ui/primitives/GlassField.tsx#L1-L50)
 - [src/components/ui/primitives/GlassInput.tsx:1-29](file://src/components/ui/primitives/GlassInput.tsx#L1-L29)
@@ -75,24 +95,29 @@ D --> K["GlassModalShell"]
 - [src/components/ui/primitives/GlassButton.tsx:1-67](file://src/components/ui/primitives/GlassButton.tsx#L1-L67)
 - [src/components/ui/primitives/GlassChip.tsx:1-43](file://src/components/ui/primitives/GlassChip.tsx#L1-L43)
 - [src/components/ui/primitives/GlassModalShell.tsx:1-102](file://src/components/ui/primitives/GlassModalShell.tsx#L1-L102)
+- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
 
 ## 架构总览
-Glass UI 设计系统采用“令牌层 + 语义层 + 组件层”的分层架构：
+Glass UI 设计系统采用"令牌层 + 语义层 + 组件层"的分层架构：
 - 令牌层（ui-tokens-glass.css）：集中管理颜色、阴影、圆角、模糊、间距与密度等设计令牌。
 - 语义层（ui-semantic-glass.css）：以类名形式暴露可复用的视觉样式与交互态，组件通过类名组合实现一致风格。
 - 组件层（primitives/*）：以最小可用接口封装语义类名与行为，保证可组合、可扩展与可测试。
+- **新增**：独立功能组件层，提供特定业务场景的完整解决方案。
 
 ```mermaid
 graph TB
 T["令牌层<br/>ui-tokens-glass.css"] --> S["语义层<br/>ui-semantic-glass.css"]
 S --> P["组件层<br/>primitives/*"]
+S --> IM["独立组件层<br/>ImagePreviewModal"]
 P --> U["业务页面使用"]
+IM --> U
 ```
 
-图表来源
+**图表来源**
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
+- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
 
 ## 组件详解
 
@@ -118,10 +143,10 @@ class GlassSurface {
 }
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassSurface.tsx:5-12](file://src/components/ui/primitives/GlassSurface.tsx#L5-L12)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassSurface.tsx:18-46](file://src/components/ui/primitives/GlassSurface.tsx#L18-L46)
 
 ### GlassField 表单字段包装器
@@ -132,7 +157,7 @@ class GlassSurface {
   - hint：辅助提示
   - error：错误文案
   - required：是否显示必填星号
-  - actions：右侧操作区（如“重置”、“帮助”）
+  - actions：右侧操作区（如"重置"、"帮助"）
 - 使用建议：与 GlassInput/GlassTextarea/GlassSelect 组合使用，确保 label 与输入控件 id 对应。
 
 ```mermaid
@@ -149,10 +174,10 @@ ShowError --> End(["结束"])
 ShowHint --> End
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassField.tsx:1-50](file://src/components/ui/primitives/GlassField.tsx#L1-L50)
 
 ### GlassInput 与 GlassTextarea
@@ -174,11 +199,11 @@ class GlassTextarea {
 }
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassInput.tsx:3-5](file://src/components/ui/primitives/GlassInput.tsx#L3-L5)
 - [src/components/ui/primitives/GlassTextarea.tsx:3-5](file://src/components/ui/primitives/GlassTextarea.tsx#L3-L5)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassInput.tsx:11-28](file://src/components/ui/primitives/GlassInput.tsx#L11-L28)
 - [src/components/ui/primitives/GlassTextarea.tsx:11-28](file://src/components/ui/primitives/GlassTextarea.tsx#L11-L28)
 
@@ -208,10 +233,10 @@ B-->>U : 触发 onClick 回调
 end
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassButton.tsx:17-64](file://src/components/ui/primitives/GlassButton.tsx#L17-L64)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassButton.tsx:1-67](file://src/components/ui/primitives/GlassButton.tsx#L1-L67)
 
 ### GlassChip 标签
@@ -234,10 +259,10 @@ class GlassChip {
 }
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassChip.tsx:6-12](file://src/components/ui/primitives/GlassChip.tsx#L6-L12)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassChip.tsx:18-42](file://src/components/ui/primitives/GlassChip.tsx#L18-L42)
 
 ### GlassModalShell 模态壳体
@@ -270,16 +295,54 @@ M-->>U : 忽略
 end
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassModalShell.tsx:1-102](file://src/components/ui/primitives/GlassModalShell.tsx#L1-L102)
+
+### ImagePreviewModal 图片预览组件
+- **新增** 设计理念：提供全屏图片预览功能，支持图片查看、原始图片链接、关闭控制与滚动管理。
+- 关键属性
+  - imageUrl：要预览的图片地址，支持 Next.js 图像服务与存储密钥
+  - onClose：关闭回调函数
+- 核心功能
+  - 自动禁用页面滚动，防止背景滚动
+  - 支持 Esc 键快速关闭
+  - 提供查看原始图片的链接（当为存储密钥时）
+  - 使用 MediaImageWithLoading 组件提供加载状态
+  - 应用统一的玻璃拟态视觉风格
+- 交互要点：点击遮罩区域或关闭按钮关闭；支持键盘事件监听；自动清理事件监听器。
+
+```mermaid
+sequenceDiagram
+participant U as "用户"
+participant IPM as "ImagePreviewModal"
+participant MIM as "MediaImageWithLoading"
+U->>IPM : 打开预览
+IPM->>IPM : 禁用页面滚动
+IPM->>IPM : 解析图片URL
+IPM->>MIM : 渲染图片组件
+MIM-->>U : 显示加载状态
+MIM-->>U : 图片加载完成
+U->>IPM : 点击关闭按钮
+IPM->>IPM : 触发onClose
+IPM->>IPM : 恢复页面滚动
+IPM->>IPM : 移除事件监听器
+```
+
+**图表来源**
+- [src/components/ui/ImagePreviewModal.tsx:14-77](file://src/components/ui/ImagePreviewModal.tsx#L14-L77)
+- [src/components/media/MediaImageWithLoading.tsx:18-91](file://src/components/media/MediaImageWithLoading.tsx#L18-L91)
+
+**章节来源**
+- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
 
 ## 依赖关系分析
 - 组件导出索引：primitives/index.ts 统一导出各组件类型与默认实现，便于按需引入与测试。
 - 组件间耦合：组件均通过类名组合实现，彼此低耦合，便于替换与扩展。
-- 外部依赖：GlassButton 内部使用任务状态解析工具以生成 loading 态；GlassModalShell 使用 React Portal 实现挂载。
+- 外部依赖：GlassButton 内部使用任务状态解析工具以生成 loading 态；GlassModalShell 使用 React Portal 实现挂载；ImagePreviewModal 依赖 MediaImageWithLoading 和 image-url 工具。
+- **新增**：ImagePreviewModal 依赖多个工具模块，形成完整的图片处理链路。
 
 ```mermaid
 graph LR
@@ -290,27 +353,36 @@ IDX --> FLD["GlassField"]
 IDX --> SUR["GlassSurface"]
 IDX --> CHIP["GlassChip"]
 IDX --> MOD["GlassModalShell"]
+IM["ImagePreviewModal"] --> MIM["MediaImageWithLoading"]
+IM --> APP["AppIcon"]
+IM --> IU["image-url 工具"]
 BTN -.-> TSK["任务状态解析"]
 MOD -.-> DOM["React Portal"]
+IM -.-> IMG["图片处理链路"]
 ```
 
-图表来源
+**图表来源**
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
 - [src/components/ui/primitives/GlassButton.tsx:2-4](file://src/components/ui/primitives/GlassButton.tsx#L2-L4)
 - [src/components/ui/primitives/GlassModalShell.tsx:3-4](file://src/components/ui/primitives/GlassModalShell.tsx#L3-L4)
+- [src/components/ui/ImagePreviewModal.tsx:3-7](file://src/components/ui/ImagePreviewModal.tsx#L3-L7)
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
 
 ## 性能考量
 - 令牌层与语义层：通过 CSS 变量与类名组合，避免在运行时计算样式，渲染成本低。
 - 组件实现：多数组件为轻量 forwardRef + cx 组合类名，无额外状态与副作用。
-- 动画与模糊：语义层对 backdrop-filter 与 blur 的使用需关注低端设备性能，可结合数据属性切换“subtle”预设降低开销。
+- 动画与模糊：语义层对 backdrop-filter 与 blur 的使用需关注低端设备性能，可结合数据属性切换"subtle"预设降低开销。
 - 加载态：GlassButton 的 loading 通过任务状态解析生成，避免重复逻辑，减少分支判断。
+- **新增**：ImagePreviewModal 使用 useEffect 清理机制，确保事件监听器正确移除，防止内存泄漏。
+- **新增**：MediaImageWithLoading 组件提供骨架屏与加载指示器，改善大图加载体验。
 
-章节来源
+**章节来源**
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
 - [src/components/ui/primitives/GlassButton.tsx:41-48](file://src/components/ui/primitives/GlassButton.tsx#L41-L48)
+- [src/components/ui/ImagePreviewModal.tsx:17-33](file://src/components/ui/ImagePreviewModal.tsx#L17-L33)
+- [src/components/media/MediaImageWithLoading.tsx:34-58](file://src/components/media/MediaImageWithLoading.tsx#L34-L58)
 
 ## 故障排查指南
 - 输入框无焦点环或描边异常
@@ -322,18 +394,27 @@ MOD -.-> DOM["React Portal"]
 - 模态无法关闭
   - 检查 open、closeOnBackdrop、closeOnEsc 设置；确认 Portal 是否成功挂载到 document.body。
   - 参考路径：[模态交互与 Portal:36-101](file://src/components/ui/primitives/GlassModalShell.tsx#L36-L101)
+- **新增**：图片预览组件无法显示图片
+  - 检查 imageUrl 参数是否有效；确认 toDisplayImageUrl 函数正确解析 URL。
+  - 验证 MediaImageWithLoading 组件是否正确渲染。
+  - 参考路径：[图片预览组件:35-38](file://src/components/ui/ImagePreviewModal.tsx#L35-L38)
+- **新增**：图片预览后页面仍可滚动
+  - 检查 useEffect 清理函数是否执行；确认事件监听器是否正确移除。
+  - 参考路径：[滚动控制逻辑:17-33](file://src/components/ui/ImagePreviewModal.tsx#L17-L33)
 - 主题切换后样式错乱
   - 确认暗色主题类名与变量覆盖是否正确；检查全局样式中主题层与变量桥接。
   - 参考路径：[暗色主题变量覆盖:481-513](file://src/app/globals.css#L481-L513)
 
-章节来源
+**章节来源**
 - [src/styles/ui-semantic-glass.css:66-112](file://src/styles/ui-semantic-glass.css#L66-L112)
 - [src/components/ui/primitives/GlassButton.tsx:41-58](file://src/components/ui/primitives/GlassButton.tsx#L41-L58)
 - [src/components/ui/primitives/GlassModalShell.tsx:36-101](file://src/components/ui/primitives/GlassModalShell.tsx#L36-L101)
+- [src/components/ui/ImagePreviewModal.tsx:35-38](file://src/components/ui/ImagePreviewModal.tsx#L35-L38)
+- [src/components/ui/ImagePreviewModal.tsx:17-33](file://src/components/ui/ImagePreviewModal.tsx#L17-L33)
 - [src/app/globals.css:481-513](file://src/app/globals.css#L481-L513)
 
 ## 结论
-Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核心，实现了高一致性与可维护性的玻璃拟态界面。通过统一的令牌与语义层，组件具备良好的可定制性与可扩展性；通过合理的交互与加载态设计，提升了用户体验。建议在业务开发中优先使用本组件库提供的基础组件，遵循组合与复用策略，确保风格一致与性能稳定。
+Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核心，实现了高一致性与可维护性的玻璃拟态界面。通过统一的令牌与语义层，组件具备良好的可定制性与可扩展性；通过合理的交互与加载态设计，提升了用户体验。新增的 ImagePreviewModal 组件进一步完善了组件库的功能完整性，提供了专业的图片预览解决方案。建议在业务开发中优先使用本组件库提供的基础组件，遵循组合与复用策略，确保风格一致与性能稳定。
 
 ## 附录
 
@@ -341,17 +422,20 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - 组件层：通过类名组合与密度变量实现紧凑/默认两种密度，适配移动端与桌面端。
 - 样式层：语义层提供密度类名，容器组件根据密度动态选择类名。
 - 全局层：媒体查询与断点配合语义类名，实现自适应布局。
+- **新增**：ImagePreviewModal 使用 max-w-[98vw] 和 max-h-[98vh] 确保在各种屏幕尺寸下的最佳显示效果。
 
-章节来源
+**章节来源**
 - [src/styles/ui-semantic-glass.css:265-271](file://src/styles/ui-semantic-glass.css#L265-L271)
 - [src/components/ui/primitives/GlassSurface.tsx:31](file://src/components/ui/primitives/GlassSurface.tsx#L31)
+- [src/components/ui/ImagePreviewModal.tsx:46](file://src/components/ui/ImagePreviewModal.tsx#L46)
 
 ### 主题定制与样式覆盖
 - 令牌层定制：修改 ui-tokens-glass.css 中变量即可调整整体风格（颜色、阴影、圆角、模糊等）。
 - 语义层覆盖：通过自定义类名叠加语义类名，实现局部覆盖。
 - 全局桥接：globals.css 将令牌映射为全局 CSS 变量，便于 Tailwind 与第三方组件共享。
+- **新增**：支持 data-glass-preset="subtle" 预设，在性能敏感环境中降低视觉效果强度。
 
-章节来源
+**章节来源**
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/app/globals.css:7-61](file://src/app/globals.css#L7-L61)
 
@@ -360,28 +444,47 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
   - 表单：GlassField 包裹 GlassInput/GlassTextarea，统一 label/hint/error。
   - 卡片：GlassSurface 包裹内容，必要时开启 interactive 与 padded。
   - 模态：GlassModalShell 作为外壳，内部使用 GlassSurface 与表单组件。
+  - **新增**：图片预览：ImagePreviewModal 作为独立组件，通过 props 控制显示与隐藏。
 - 复用策略
   - 通过 variants/density/icon/loading 等属性在不同场景复用同一组件。
   - 使用 Portal 的 GlassModalShell 在页面任意位置渲染，避免层级与布局问题。
+  - **新增**：ImagePreviewModal 通过统一的图片处理工具链，支持多种图片格式与来源。
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassSurface.tsx:18-46](file://src/components/ui/primitives/GlassSurface.tsx#L18-L46)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
+- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
 
 ### 实际使用示例与最佳实践
 - 示例场景
   - 登录表单：GlassField + GlassInput + GlassButton（primary）
   - 设置面板：GlassSurface（elevated）+ GlassField + GlassInput/GlassTextarea + GlassButton（secondary/ghost）
   - 确认对话框：GlassModalShell（size=sm）+ GlassButton（danger/ghost）
+  - **新增**：图片预览：在图片点击事件中调用 ImagePreviewModal，传入图片 URL 与关闭回调。
 - 最佳实践
   - 保持 label 与输入控件 id 对齐，提升可访问性。
   - 使用 GlassChip 展示状态或标签，必要时提供 onRemove。
   - 在性能敏感场景使用 data-glass-preset="subtle" 降低模糊与阴影开销。
   - 通过 Portal 渲染模态，避免定位与层级问题。
+  - **新增**：使用 ImagePreviewModal 时，确保正确处理图片 URL 解析与错误情况。
+  - **新增**：在图片预览组件中，合理使用 MediaImageWithLoading 提供加载反馈。
 
-章节来源
+**章节来源**
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassButton.tsx:17-64](file://src/components/ui/primitives/GlassButton.tsx#L17-L64)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
+- [src/components/ui/ImagePreviewModal.tsx:14-77](file://src/components/ui/ImagePreviewModal.tsx#L14-L77)
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
+
+### 图片预览功能的视觉设计优化
+- **新增**：ImagePreviewModal 采用统一的玻璃拟态设计语言，与整体 UI 风格保持一致。
+- **新增**：使用 backdrop-blur-sm 实现毛玻璃效果，增强视觉层次感。
+- **新增**：按钮采用圆角设计与过渡动画，提供流畅的交互体验。
+- **新增**：图片容器应用 rounded-3xl 圆角，shadow-2xl 阴影，营造立体视觉效果。
+- **新增**：支持查看原始图片功能，通过链接按钮提供直接访问选项。
+
+**章节来源**
+- [src/components/ui/ImagePreviewModal.tsx:40-77](file://src/components/ui/ImagePreviewModal.tsx#L40-L77)
+- [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
+- [src/lib/media/image-url.ts:51-89](file://src/lib/media/image-url.ts#L51-L89)

@@ -1,32 +1,4 @@
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: waoowaoo-test-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: waoowaoo_test
-      MYSQL_ROOT_HOST: "%"
-    ports:
-      - "3307:3306"
-    command:
-      - "--default-authentication-plugin=mysql_native_password"
-      - "--sql_mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION"
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 15s
-
-  redis:
-    image: redis:7-alpine
-    container_name: waoowaoo-test-redis
-    ports:
-      - "6380:6379"
-    command: ["redis-server", "--appendonly", "no"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-      start_period: 5s
+# 测试环境不再需要独立的 Docker 容器。
+# 测试使用主容器的 MySQL (localhost:13306) 和 Redis (localhost:6379)，
+# 但通过不同的 database (waoowaoo_test) 和 Redis namespace 隔离数据。
+# 参见 tests/setup/global-setup.ts 和 tests/setup/env.ts。
