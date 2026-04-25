@@ -54,6 +54,10 @@ interface SelectProjectCharacterImageContext {
 interface DeleteProjectCharacterContext {
     previousAssets: ProjectAssetsData | undefined
     previousProject: Project | undefined
+    previousAssetListSnapshots: Array<{
+        queryKey: readonly unknown[]
+        data: AssetSummary[] | undefined
+    }>
 }
 
 function applyCharacterSelectionToCharacters(
@@ -348,8 +352,6 @@ export function useUndoProjectCharacterImage(projectId: string) {
 
 export function useDeleteProjectCharacter(projectId: string) {
     const queryClient = useQueryClient()
-    const invalidateProjectAssets = () =>
-        invalidateQueryTemplates(queryClient, [queryKeys.projectAssets.all(projectId)])
 
     return useMutation({
         mutationFn: async (characterId: string) => {
@@ -362,12 +364,16 @@ export function useDeleteProjectCharacter(projectId: string) {
         onMutate: async (characterId): Promise<DeleteProjectCharacterContext> => {
             const assetsQueryKey = queryKeys.projectAssets.all(projectId)
             const projectQueryKey = queryKeys.projectData(projectId)
+            const assetsParentKey = queryKeys.assets.all('project', projectId)
 
             await queryClient.cancelQueries({ queryKey: assetsQueryKey })
             await queryClient.cancelQueries({ queryKey: projectQueryKey })
 
             const previousAssets = queryClient.getQueryData<ProjectAssetsData>(assetsQueryKey)
             const previousProject = queryClient.getQueryData<Project>(projectQueryKey)
+            const previousAssetListSnapshots = queryClient
+                .getQueriesData<AssetSummary[]>({ queryKey: assetsParentKey, exact: false })
+                .map(([queryKey, data]) => ({ queryKey, data }))
 
             queryClient.setQueryData<ProjectAssetsData | undefined>(assetsQueryKey, (previous) =>
                 removeCharacterFromAssets(previous, characterId),
@@ -375,18 +381,32 @@ export function useDeleteProjectCharacter(projectId: string) {
             queryClient.setQueryData<Project | undefined>(projectQueryKey, (previous) =>
                 removeCharacterFromProject(previous, characterId),
             )
+            // 同步更新所有 assets.list 系列缓存
+            queryClient.setQueriesData<AssetSummary[] | undefined>(
+                { queryKey: assetsParentKey, exact: false },
+                (previous) => previous?.filter((asset) => !(asset.kind === 'character' && asset.id === characterId)),
+            )
 
             return {
                 previousAssets,
                 previousProject,
+                previousAssetListSnapshots,
             }
         },
         onError: (_error, _characterId, context) => {
             if (!context) return
             queryClient.setQueryData(queryKeys.projectAssets.all(projectId), context.previousAssets)
             queryClient.setQueryData(queryKeys.projectData(projectId), context.previousProject)
+            context.previousAssetListSnapshots.forEach((snapshot) => {
+                queryClient.setQueryData(snapshot.queryKey, snapshot.data)
+            })
         },
-        onSettled: invalidateProjectAssets,
+        onSettled: () => {
+            invalidateQueryTemplates(queryClient, [
+                queryKeys.projectAssets.all(projectId),
+                queryKeys.assets.all('project', projectId),
+            ])
+        },
     })
 }
 
