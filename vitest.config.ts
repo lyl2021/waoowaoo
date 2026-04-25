@@ -7,6 +7,10 @@ export default defineConfig({
       plugins: [],
     },
   },
+  oxc: false,
+  esbuild: {
+    jsx: 'automatic',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

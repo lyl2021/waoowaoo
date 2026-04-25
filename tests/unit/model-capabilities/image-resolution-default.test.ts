@@ -29,7 +29,7 @@ describe('model-capabilities/lookup - image resolution defaulting', () => {
 
     expect(result.issues).toEqual([])
     expect(result.options).toEqual({
-      resolution: '0.5K',
+      resolution: '2K',
     })
   })
 

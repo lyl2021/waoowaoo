@@ -22,13 +22,15 @@ const createChatCompletionMock = vi.hoisted(() =>
 )
 
 const openAiCtorMock = vi.hoisted(() =>
-  vi.fn(() => ({
-    chat: {
-      completions: {
-        create: createChatCompletionMock,
+  vi.fn(function() {
+    return {
+      chat: {
+        completions: {
+          create: createChatCompletionMock,
+        },
       },
-    },
-  })),
+    }
+  }),
 )
 
 vi.mock('openai', () => ({

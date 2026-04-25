@@ -13,18 +13,14 @@ const {
   createBucketCommandMock,
 } = vi.hoisted(() => ({
   sendMock: vi.fn<(command: MockCommand) => Promise<unknown>>(),
-  s3ClientMock: vi.fn(() => ({ send: undefined as unknown })),
-  headBucketCommandMock: vi.fn((input: Record<string, unknown>): MockCommand => ({
-    type: 'HeadBucketCommand',
-    input,
-  })),
-  createBucketCommandMock: vi.fn((input: Record<string, unknown>): MockCommand => ({
-    type: 'CreateBucketCommand',
-    input,
-  })),
+  s3ClientMock: vi.fn(function() { return { send: sendMock } }),
+  headBucketCommandMock: vi.fn(function(input: Record<string, unknown>): MockCommand {
+    return { type: 'HeadBucketCommand', input }
+  }),
+  createBucketCommandMock: vi.fn(function(input: Record<string, unknown>): MockCommand {
+    return { type: 'CreateBucketCommand', input }
+  }),
 }))
-
-s3ClientMock.mockImplementation(() => ({ send: sendMock }))
 
 vi.mock('@aws-sdk/client-s3', () => ({
   S3Client: s3ClientMock,

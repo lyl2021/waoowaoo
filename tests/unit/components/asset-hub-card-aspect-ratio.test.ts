@@ -173,7 +173,7 @@ describe('asset hub card aspect ratio', () => {
       }),
     )
 
-    expect(html).toContain('aspect-[3/2]')
+    expect(html).toContain('aspect-square')
     expect(html).toContain('data-icon="image"')
     expect(html).not.toContain('min-h-[100px]')
   })
@@ -237,7 +237,7 @@ describe('asset hub card aspect ratio', () => {
       }),
     )
 
-    expect(html).toContain('aspect-[3/2]')
+    expect(html).toContain('aspect-square')
     expect(html).not.toContain('min-h-[100px]')
   })
 })

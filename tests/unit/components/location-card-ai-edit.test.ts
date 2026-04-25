@@ -136,7 +136,7 @@ describe('LocationCard AI edit button', () => {
       expect(html).toContain(token)
     }
     const firstCall = locationImageListMock.mock.calls[0]?.[0] as { aspectClassName?: string } | undefined
-    expect(firstCall?.aspectClassName).toBe('aspect-[3/2]')
+    expect(firstCall?.aspectClassName).toBe('aspect-square')
   })
 
   it('passes a square image slot to project location cards', async () => {
