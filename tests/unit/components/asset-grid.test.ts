@@ -142,7 +142,7 @@ describe('AssetGrid', () => {
         onAddLocation: () => undefined,
         onAddProp: () => undefined,
         onAddVoice: () => undefined,
-        filter: 'all',
+        filter: 'location',
       }),
     )
 
