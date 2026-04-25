@@ -43,11 +43,11 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
       onClick={onClose}
       style={{ margin: 0, padding: 0 }}
     >
-      <div className="relative max-w-7xl max-h-[90vh] p-4">
+      <div className="relative max-w-[98vw] max-h-[98vh] p-1">
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-[var(--glass-overlay)] hover:bg-[var(--glass-overlay)] text-white transition-colors"
+          className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors backdrop-blur-sm"
         >
           <AppIcon name="close" className="w-6 h-6" />
         </button>
@@ -57,7 +57,7 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="absolute top-6 right-20 z-10 px-3 h-10 inline-flex items-center rounded-full bg-[var(--glass-overlay)] hover:bg-[var(--glass-overlay)] text-white text-sm transition-colors"
+            className="absolute top-3 right-16 z-10 px-3 h-10 inline-flex items-center rounded-full bg-black/40 hover:bg-black/60 text-white text-sm transition-colors backdrop-blur-sm"
           >
             {t('viewOriginal')}
           </a>
@@ -67,8 +67,8 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
         <MediaImageWithLoading
           src={displayImageUrl}
           alt={t('preview')}
-          containerClassName="max-w-full max-h-[90vh]"
-          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          containerClassName="max-w-full max-h-[98vh] rounded-3xl"
+          className="max-w-full max-h-[98vh] object-contain rounded-3xl shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         />
       </div>
