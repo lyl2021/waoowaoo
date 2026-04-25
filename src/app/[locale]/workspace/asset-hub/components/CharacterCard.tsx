@@ -244,7 +244,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     // 多图选择模式
     if (hasMultipleImages) {
         return (
-            <div className="col-span-3 glass-surface p-4 relative">
+            <div className="col-span-full glass-surface p-4 relative">
                 {/* 隐藏输入 */}
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
                 <input ref={voiceInputRef} type="file" accept="audio/*" onChange={handleUploadVoice} className="hidden" />
@@ -313,7 +313,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
                 )}
 
                 {/* 图片列表 */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {imageUrls.map((url, index) => {
                         if (!isValidUrl(url)) return null
                         const validUrl = url as string
@@ -403,7 +403,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
             <input ref={voiceInputRef} type="file" accept="audio/*" onChange={handleUploadVoice} className="hidden" />
 
             {/* 图片区域 */}
-            <div className="relative aspect-[3/2] bg-[var(--glass-bg-muted)]">
+            <div className="relative aspect-square bg-[var(--glass-bg-muted)] p-3">
                 {displayImageUrl ? (
                     <>
                         <MediaImageWithLoading

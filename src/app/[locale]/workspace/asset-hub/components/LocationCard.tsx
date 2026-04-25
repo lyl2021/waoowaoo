@@ -1,7 +1,7 @@
 'use client'
 import { resolveErrorDisplay } from '@/lib/errors/display'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   useGenerateLocationImage,
@@ -71,6 +71,7 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
   const latestSelectRequestRef = useRef(0)
 
   // 解析图片
@@ -79,10 +80,18 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
   const generatedImageCount = countGeneratedImageSlots(orderedImages)
   const selectedImage = orderedImages.find((img) => img.isSelected)
   const serverSelectedIndex = selectedImage?.imageIndex ?? null
-  const effectiveSelectedIndex = serverSelectedIndex
+  const resolvedSelectedIndex: number | null = pendingSelectedIndex !== undefined ? pendingSelectedIndex : serverSelectedIndex
+  const effectiveSelectedIndex = resolvedSelectedIndex
   const currentImageUrl = selectedImage?.imageUrl || imagesWithUrl[0]?.imageUrl || null
   const currentImageIndex = effectiveSelectedIndex ?? imagesWithUrl[0]?.imageIndex ?? 0
   const hasPreviousVersion = location.images?.some(img => img.previousImageUrl) || false
+
+  // 同步：当服务端数据追上时清除 pending 状态
+  useEffect(() => {
+    if (pendingSelectedIndex !== undefined && serverSelectedIndex === pendingSelectedIndex) {
+      setPendingSelectedIndex(undefined)
+    }
+  }, [serverSelectedIndex, pendingSelectedIndex])
 
   const isValidUrl = (url: string | null | undefined): boolean => {
     if (!url || url.trim() === '') return false
@@ -134,9 +143,10 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
     })
   }
 
-  // 选择图片（依赖 query 缓存乐观更新）
+  // 选择图片（依赖 query 缓存乐观更新 + 本地 pending 状态）
   const handleSelectImage = (imageIndex: number | null) => {
     if (imageIndex === effectiveSelectedIndex) return
+    setPendingSelectedIndex(imageIndex)
     const requestId = latestSelectRequestRef.current + 1
     latestSelectRequestRef.current = requestId
     selectImage.mutate({
@@ -210,7 +220,7 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
         : tAssets('image.selectFirst')
 
     return (
-      <div className="col-span-3 glass-surface p-4 relative">
+      <div className="col-span-full glass-surface p-4 relative">
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
 
         {/* 顶部：名字 + 操作 */}
@@ -268,9 +278,9 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
         )}
 
         {/* 图片列表 */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {displaySelectionImages.map((img) => {
-            const isThisSelected = img.isSelected
+            const isThisSelected = effectiveSelectedIndex !== null && img.imageIndex === effectiveSelectedIndex
             const hasPendingEmptySlots = isTaskRunning && generatedImageCount < displaySlotCount
             const slotTaskRunning = hasPendingEmptySlots
               ? !img.imageUrl && isTaskRunning

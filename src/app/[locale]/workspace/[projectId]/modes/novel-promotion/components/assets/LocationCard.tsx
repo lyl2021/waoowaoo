@@ -117,18 +117,29 @@ export default function LocationCard({
   const serverSelectedIndex = selectedImage?.imageIndex ?? null
 
   // 乐观更新：pendingSelectedIndex
-  const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null>(null)
+  // undefined = 未交互，null = 用户取消了选择，number = 用户选中了某张
+  const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
   const hasMultipleImages = generatedImageCount > 1
   const resolvedSelectedIndex = hasMultipleImages && serverSelectedIndex === null ? 0 : serverSelectedIndex
-  const selectedIndex = pendingSelectedIndex !== null ? pendingSelectedIndex : resolvedSelectedIndex
+  // 用户已交互时尊重用户选择（包括取消选中的 null），未交互时使用服务端状态（默认第0张）
+  const selectedIndex = pendingSelectedIndex !== undefined ? pendingSelectedIndex : resolvedSelectedIndex
 
   useEffect(() => {
-    if (pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex) {
-      setPendingSelectedIndex(null)
+    console.log('[DEBUG LocationCard] sync effect:', {
+        pendingSelectedIndex,
+        serverSelectedIndex,
+        willClear: pendingSelectedIndex !== undefined && pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex,
+        selectedIndex,
+        resolvedSelectedIndex,
+    })
+    // 仅在用户正向选择（非取消）且服务端确认后清除 pending
+    if (pendingSelectedIndex !== undefined && pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex) {
+      setPendingSelectedIndex(undefined)
     }
   }, [pendingSelectedIndex, serverSelectedIndex])
 
   const handleLocalSelectImage = useCallback((locationId: string, imageIndex: number | null) => {
+    console.log('[DEBUG LocationCard] handleLocalSelectImage called:', { locationId, imageIndex, pendingBefore: pendingSelectedIndex })
     setPendingSelectedIndex(imageIndex)
     onSelectImage?.(locationId, imageIndex)
   }, [onSelectImage])

@@ -19,10 +19,17 @@ export interface CandidateState {
     candidates: string[]            // 候选图片列表
     selectedIndex: number           // 当前选中 (-1=原图, 0-N=候选)
     previousUrl: string | null      // 上一版本 URL（支持撤回）
+    hasPendingCandidates: boolean  // 是否包含 PENDING 候选（用于区分“生成开始/进行中”）
+    rawCandidatesCount: number     // 候选数组原始长度（包含 PENDING）
 }
 
 export function useCandidateSystem<TId extends string = string>() {
     const [states, setStates] = useState<Map<TId, CandidateState>>(new Map())
+
+    type CandidateMeta = {
+        hasPendingCandidates: boolean
+        rawCandidatesCount: number
+    }
 
     /**
      * 初始化某个实体的候选图片
@@ -31,7 +38,8 @@ export function useCandidateSystem<TId extends string = string>() {
         id: TId,
         originalUrl: string | null,
         candidates: string[],
-        previousUrl: string | null = null
+        previousUrl: string | null = null,
+        meta?: CandidateMeta,
     ) => {
         setStates(prev => {
             const next = new Map(prev)
@@ -39,7 +47,9 @@ export function useCandidateSystem<TId extends string = string>() {
                 originalUrl,
                 candidates: candidates.filter(c => c && !c.startsWith('PENDING:')), // 过滤 PENDING 任务
                 selectedIndex: 0, // 默认选中第一张候选
-                previousUrl
+                previousUrl,
+                hasPendingCandidates: meta?.hasPendingCandidates ?? false,
+                rawCandidatesCount: meta?.rawCandidatesCount ?? candidates.length,
             })
             return next
         })
@@ -54,8 +64,12 @@ export function useCandidateSystem<TId extends string = string>() {
             const current = prev.get(id)
             if (!current) return prev
 
+            const maxIndex = current.candidates.length - 1
+            const nextSelectedIndex = Math.max(-1, Math.min(index, maxIndex))
+            if (current.selectedIndex === nextSelectedIndex) return prev
+
             const next = new Map(prev)
-            next.set(id, { ...current, selectedIndex: index })
+            next.set(id, { ...current, selectedIndex: nextSelectedIndex })
             return next
         })
     }, [])
@@ -106,6 +120,80 @@ export function useCandidateSystem<TId extends string = string>() {
     }, [])
 
     /**
+     * 同步候选列表（尽量保留当前选中的候选 URL 对应索引）
+     * - 主要用于候选列表增量更新时，避免 selectedIndex 被强制重置。
+     */
+    const syncCandidates = useCallback((
+        id: TId,
+        originalUrl: string | null,
+        candidates: string[],
+        previousUrl: string | null = null,
+        meta?: CandidateMeta,
+    ) => {
+        setStates(prev => {
+            const next = new Map(prev)
+            const existing = next.get(id)
+
+            const normalizedCandidates = candidates.filter(c => c && !c.startsWith('PENDING:'))
+            const nextHasPendingCandidates = meta?.hasPendingCandidates ?? false
+            const nextRawCandidatesCount = meta?.rawCandidatesCount ?? candidates.length
+
+            if (!existing) {
+                next.set(id, {
+                    originalUrl,
+                    candidates: normalizedCandidates,
+                    selectedIndex: 0,
+                    previousUrl,
+                    hasPendingCandidates: nextHasPendingCandidates,
+                    rawCandidatesCount: nextRawCandidatesCount,
+                })
+                return next
+            }
+
+            const urlChanged =
+                (existing.originalUrl || null) !== (originalUrl || null) ||
+                (existing.previousUrl || null) !== (previousUrl || null)
+
+            // 重生成/撤回导致 URL 变化时，回到第一项（符合默认第一个的预期）
+            if (urlChanged) {
+                next.set(id, {
+                    ...existing,
+                    originalUrl,
+                    candidates: normalizedCandidates,
+                    selectedIndex: 0,
+                    previousUrl,
+                    hasPendingCandidates: nextHasPendingCandidates,
+                    rawCandidatesCount: nextRawCandidatesCount,
+                })
+                return next
+            }
+
+            const currentSelectedIndex = existing.selectedIndex
+            const currentSelectedUrl =
+                currentSelectedIndex >= 0 && currentSelectedIndex < existing.candidates.length
+                    ? existing.candidates[currentSelectedIndex]
+                    : null
+
+            let nextSelectedIndex = 0
+            if (currentSelectedUrl) {
+                const idx = normalizedCandidates.indexOf(currentSelectedUrl)
+                if (idx >= 0) nextSelectedIndex = idx
+            }
+
+            next.set(id, {
+                ...existing,
+                originalUrl,
+                candidates: normalizedCandidates,
+                selectedIndex: nextSelectedIndex,
+                previousUrl,
+                hasPendingCandidates: nextHasPendingCandidates,
+                rawCandidatesCount: nextRawCandidatesCount,
+            })
+            return next
+        })
+    }, [])
+
+    /**
      * 检查是否有候选图片
      */
     const hasCandidates = useCallback((id: TId): boolean => {
@@ -132,6 +220,7 @@ export function useCandidateSystem<TId extends string = string>() {
         states,
         initCandidates,
         selectCandidate,
+        syncCandidates,
         getDisplayImage,
         getConfirmData,
         clearCandidates,

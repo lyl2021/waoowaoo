@@ -1,4 +1,3 @@
-// @ts-expect-error - Vitest config types not compatible with Next.js build check
 import { defineConfig } from 'vitest/config'
 import { resolve } from 'node:path'
 
@@ -17,12 +16,6 @@ export default defineConfig({
     environment: 'node',
     css: false,
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        minForks: 1,
-        maxForks: 1,
-      },
-    },
     setupFiles: ['./tests/setup/env.ts'],
     globalSetup: ['./tests/setup/global-setup.ts'],
     include: ['**/*.test.ts'],

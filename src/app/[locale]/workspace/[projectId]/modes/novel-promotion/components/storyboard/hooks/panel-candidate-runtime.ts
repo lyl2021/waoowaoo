@@ -13,16 +13,26 @@ interface CandidateStateLike {
   selectedIndex: number
   originalUrl?: string | null
   previousUrl?: string | null
+  hasPendingCandidates?: boolean
+  rawCandidatesCount?: number
 }
 
 interface PanelCandidateSystemLike {
   getCandidateState: (id: string) => CandidateStateLike | null | undefined
   clearCandidates: (id: string) => void
+  syncCandidates: (
+    id: string,
+    originalUrl: string | null,
+    candidates: string[],
+    previousUrl: string | null,
+    meta?: { hasPendingCandidates: boolean; rawCandidatesCount: number },
+  ) => void
   initCandidates: (
     id: string,
     originalUrl: string | null,
     candidates: string[],
     previousUrl: string | null,
+    meta?: { hasPendingCandidates: boolean; rawCandidatesCount: number },
   ) => void
 }
 
@@ -52,6 +62,14 @@ function clearIfExists(system: PanelCandidateSystemLike, panelId: string) {
   }
 }
 
+function isArrayPrefix(prefix: string[], full: string[]) {
+  if (prefix.length > full.length) return false
+  for (let index = 0; index < prefix.length; index += 1) {
+    if (prefix[index] !== full[index]) return false
+  }
+  return true
+}
+
 export function ensurePanelCandidatesInitialized(
   panel: NovelPromotionPanel,
   candidateSystem: PanelCandidateSystemLike,
@@ -75,20 +93,52 @@ export function ensurePanelCandidatesInitialized(
   }
 
   const existingState = candidateSystem.getCandidateState(panel.id)
-  const shouldRebuildState =
-    !existingState ||
-    !sameStringArray(existingState.candidates, validCandidates) ||
-    (existingState.originalUrl || null) !== (panel.imageUrl || null) ||
-    (existingState.previousUrl || null) !== (panel.previousImageUrl || null)
 
-  if (shouldRebuildState) {
-    candidateSystem.initCandidates(
-      panel.id,
-      panel.imageUrl || null,
-      validCandidates,
-      panel.previousImageUrl || null,
-    )
+  const originalUrl = panel.imageUrl || null
+  const previousUrl = panel.previousImageUrl || null
+  const hasPendingCandidates = candidates.some((candidate) => candidate.startsWith('PENDING:'))
+  const rawCandidatesCount = candidates.length
+
+  const meta = { hasPendingCandidates, rawCandidatesCount }
+
+  if (!existingState) {
+    candidateSystem.initCandidates(panel.id, originalUrl, validCandidates, previousUrl, meta)
+    return true
   }
+
+  const existingOriginalUrl = existingState.originalUrl || null
+  const existingPreviousUrl = existingState.previousUrl || null
+  const urlChanged = existingOriginalUrl !== originalUrl || existingPreviousUrl !== previousUrl
+
+  const existingHasPendingCandidates = existingState.hasPendingCandidates ?? false
+  const isNewGenerationStart = !existingHasPendingCandidates && hasPendingCandidates
+
+  // “生成开始”或“重生成/撤回”时：默认选中第一个
+  if (urlChanged || isNewGenerationStart) {
+    candidateSystem.initCandidates(panel.id, originalUrl, validCandidates, previousUrl, meta)
+    return true
+  }
+
+  const candidatesChanged = !sameStringArray(existingState.candidates, validCandidates)
+  const metaChanged =
+    (existingState.hasPendingCandidates ?? false) !== hasPendingCandidates ||
+    (existingState.rawCandidatesCount ?? existingState.candidates.length) !== rawCandidatesCount
+
+  if (candidatesChanged) {
+    // 增量候选（通常是追加）尽量保留当前选中项；只有候选被“完全替换”才重置为第一个
+    if (isArrayPrefix(existingState.candidates, validCandidates)) {
+      candidateSystem.syncCandidates(panel.id, originalUrl, validCandidates, previousUrl, meta)
+    } else {
+      candidateSystem.initCandidates(panel.id, originalUrl, validCandidates, previousUrl, meta)
+    }
+    return true
+  }
+
+  // 候选数组没变，但生成中/完成状态（PENDING）变化了：只同步元信息，避免 selectedIndex 被重置
+  if (metaChanged) {
+    candidateSystem.syncCandidates(panel.id, originalUrl, validCandidates, previousUrl, meta)
+  }
+
   return true
 }
 

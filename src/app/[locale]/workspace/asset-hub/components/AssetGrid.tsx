@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import { CharacterCard } from './CharacterCard'
 import { LocationCard } from './LocationCard'
 import { VoiceCard } from './VoiceCard'
+import { FolderDropdown } from './FolderDropdown'
 import TaskStatusInline from '@/components/task/TaskStatusInline'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import { AppIcon } from '@/components/ui/icons'
@@ -22,6 +23,11 @@ interface AssetGridProps {
     onDownloadAll?: () => void
     isDownloading?: boolean
     selectedFolderId: string | null
+    folders?: Array<{ id: string; name: string }>
+    onSelectFolder?: (folderId: string | null) => void
+    onCreateFolder?: () => void
+    onEditFolder?: (folder: { id: string; name: string }) => void
+    onDeleteFolder?: (folderId: string) => void
     onImageClick?: (url: string) => void
     onImageEdit?: (type: 'character' | 'location' | 'prop', id: string, name: string, imageIndex: number, appearanceIndex?: number) => void
     onVoiceDesign?: (characterId: string, characterName: string) => void
@@ -135,7 +141,12 @@ export function AssetGrid({
     onAddVoice,
     onDownloadAll,
     isDownloading,
-    selectedFolderId: _selectedFolderId,
+    selectedFolderId,
+    folders,
+    onSelectFolder,
+    onCreateFolder,
+    onEditFolder,
+    onDeleteFolder,
     onImageClick,
     onImageEdit,
     onVoiceDesign,
@@ -153,7 +164,6 @@ export function AssetGrid({
             hasOutput: false,
         })
         : null
-    void _selectedFolderId
 
     const [filter, setFilter] = useState<'all' | 'character' | 'location' | 'prop' | 'voice'>('all')
     const [sectionPage, setSectionPage] = useState<{ character: number; location: number; prop: number; voice: number }>({
@@ -307,17 +317,29 @@ export function AssetGrid({
     ]
 
     return (
-        <div className="flex-1 min-w-0">
-            {/* Header: 筛选 Tab + 操作按钮 */}
+        <div className="w-full">
+            {/* Header: 文件夹下拉 + 筛选 Tab + 操作按钮 */}
             <div className="flex items-center justify-between mb-6">
-                {/* 左侧筛选 */}
-                <SegmentedControl
-                    options={tabs.map(tab => ({ value: tab.id, label: tab.label }))}
-                    value={filter}
-                    onChange={(val) => setFilter(val as 'all' | 'character' | 'location' | 'prop' | 'voice')}
-                    layout="compact"
-                    className="min-w-max"
-                />
+                {/* 左侧: 文件夹下拉 + 筛选 */}
+                <div className="flex items-center gap-3">
+                    {folders && onSelectFolder && (
+                        <FolderDropdown
+                            folders={folders}
+                            selectedFolderId={selectedFolderId}
+                            onSelectFolder={onSelectFolder}
+                            onCreateFolder={onCreateFolder || (() => {})}
+                            onEditFolder={onEditFolder || (() => {})}
+                            onDeleteFolder={onDeleteFolder || (() => {})}
+                        />
+                    )}
+                    <SegmentedControl
+                        options={tabs.map(tab => ({ value: tab.id, label: tab.label }))}
+                        value={filter}
+                        onChange={(val) => setFilter(val as 'all' | 'character' | 'location' | 'prop' | 'voice')}
+                        layout="compact"
+                        className="min-w-max"
+                    />
+                </div>
 
                 {/* 右侧操作按钮 */}
                 <div className="flex items-center gap-3">
@@ -373,7 +395,7 @@ export function AssetGrid({
                                 {t('characters')}
                                 <span className="glass-chip glass-chip-neutral px-2 py-0.5">{characters.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 3xl:grid-cols-8 gap-4">
                                 {charactersPage.items.map((character) => (
                                     <CharacterCard
                                         key={character.id}
@@ -397,7 +419,7 @@ export function AssetGrid({
                                 {t('locations')}
                                 <span className="glass-chip glass-chip-neutral px-2 py-0.5">{locations.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 3xl:grid-cols-6 gap-4">
                                 {locationsPage.items.map((location) => (
                                     <LocationCard
                                         key={location.id}
@@ -418,7 +440,7 @@ export function AssetGrid({
                                 {t('props')}
                                 <span className="glass-chip glass-chip-neutral px-2 py-0.5">{props.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 3xl:grid-cols-6 gap-4">
                                 {propsPage.items.map((prop) => (
                                     <LocationCard
                                         key={prop.id}
@@ -441,7 +463,7 @@ export function AssetGrid({
                                 {t('voices')}
                                 <span className="glass-chip glass-chip-info px-2 py-0.5">{voices.length}</span>
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4">
                                 {voicesPage.items.map((voice) => (
                                     <VoiceCard
                                         key={voice.id}

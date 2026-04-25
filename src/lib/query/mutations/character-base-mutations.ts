@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import type { Character, Project } from '@/types/project'
 import { queryKeys } from '../keys'
 import type { ProjectAssetsData } from '../hooks/useProjectAssets'
+import type { AssetSummary } from '@/lib/assets/contracts'
 import { apiFetch } from '@/lib/api-fetch'
 import {
     clearTaskTargetOverlay,
@@ -15,8 +16,36 @@ import {
     requestVoidWithError,
 } from './mutation-shared'
 
+function applyCharacterSelectionToAssetSummaries(
+    assets: AssetSummary[],
+    characterId: string,
+    appearanceId: string,
+    selectedIndex: number | null,
+): AssetSummary[] {
+    return assets.map((asset) => {
+        if (asset.id !== characterId || asset.kind !== 'character') return asset
+        return {
+            ...asset,
+            variants: asset.variants.map((variant) => {
+                if (variant.id !== appearanceId) return variant
+                return {
+                    ...variant,
+                    selectionState: {
+                        selectedRenderIndex: selectedIndex,
+                    },
+                    renders: variant.renders.map((render, idx) => ({
+                        ...render,
+                        isSelected: idx === selectedIndex,
+                    })),
+                }
+            }),
+        }
+    })
+}
+
 interface SelectProjectCharacterImageContext {
     previousAssets: ProjectAssetsData | undefined
+    previousAssetSummaries: AssetSummary[] | undefined
     previousProject: Project | undefined
     targetKey: string
     requestId: number
@@ -227,13 +256,21 @@ export function useSelectProjectCharacterImage(projectId: string) {
             const requestId = (latestRequestIdByTargetRef.current[targetKey] ?? 0) + 1
             latestRequestIdByTargetRef.current[targetKey] = requestId
 
+            console.log('[DEBUG mutation] onMutate character-select:', {
+                targetKey,
+                requestId,
+                imageIndex: variables.imageIndex,
+            })
+
             const assetsQueryKey = queryKeys.projectAssets.all(projectId)
             const projectQueryKey = queryKeys.projectData(projectId)
+            const assetsListKey = queryKeys.assets.list({ scope: 'project', projectId })
 
             await queryClient.cancelQueries({ queryKey: assetsQueryKey })
             await queryClient.cancelQueries({ queryKey: projectQueryKey })
 
             const previousAssets = queryClient.getQueryData<ProjectAssetsData>(assetsQueryKey)
+            const previousAssetSummaries = queryClient.getQueryData<AssetSummary[]>(assetsListKey)
             const previousProject = queryClient.getQueryData<Project>(projectQueryKey)
 
             queryClient.setQueryData<ProjectAssetsData | undefined>(assetsQueryKey, (previous) =>
@@ -242,9 +279,20 @@ export function useSelectProjectCharacterImage(projectId: string) {
             queryClient.setQueryData<Project | undefined>(projectQueryKey, (previous) =>
                 applyCharacterSelectionToProject(previous, variables.characterId, variables.appearanceId, variables.imageIndex),
             )
+            // 同步更新 useAssets hook 使用的缓存 key
+            queryClient.setQueryData<AssetSummary[] | undefined>(assetsListKey, (previous) => {
+                if (!previous) return previous
+                return applyCharacterSelectionToAssetSummaries(previous, variables.characterId, variables.appearanceId, variables.imageIndex)
+            })
+
+            console.log('[DEBUG mutation] after setQueryData:', {
+                assetsKey: assetsQueryKey,
+                listKey: assetsListKey,
+            })
 
             return {
                 previousAssets,
+                previousAssetSummaries,
                 previousProject,
                 targetKey,
                 requestId,
@@ -256,6 +304,9 @@ export function useSelectProjectCharacterImage(projectId: string) {
             if (latestRequestId !== context.requestId) return
             queryClient.setQueryData(queryKeys.projectAssets.all(projectId), context.previousAssets)
             queryClient.setQueryData(queryKeys.projectData(projectId), context.previousProject)
+            if (context.previousAssetSummaries) {
+                queryClient.setQueryData(queryKeys.assets.list({ scope: 'project', projectId }), context.previousAssetSummaries)
+            }
         },
         onSettled: (_data, _error, variables) => {
             if (variables.confirm) {

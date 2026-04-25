@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import type { Location, Project } from '@/types/project'
 import { queryKeys } from '../keys'
 import type { ProjectAssetsData } from '../hooks/useProjectAssets'
+import type { AssetSummary } from '@/lib/assets/contracts'
 import {
     clearTaskTargetOverlay,
     upsertTaskTargetOverlay,
@@ -14,8 +15,33 @@ import {
 } from './mutation-shared'
 import { resolveTaskResponse } from '@/lib/task/client'
 
+function applyLocationSelectionToAssetSummaries(
+    assets: AssetSummary[],
+    locationId: string,
+    selectedIndex: number | null,
+): AssetSummary[] {
+    return assets.map((asset) => {
+        if (asset.id !== locationId || (asset.kind !== 'location' && asset.kind !== 'prop')) return asset
+        const selectedId = selectedIndex !== null
+            ? asset.variants.find(v => v.index === selectedIndex)?.id ?? null
+            : null
+        return {
+            ...asset,
+            selectedVariantId: selectedId,
+            variants: asset.variants.map(variant => ({
+                ...variant,
+                renders: variant.renders.map(render => ({
+                    ...render,
+                    isSelected: selectedIndex !== null && variant.index === selectedIndex,
+                })),
+            })),
+        }
+    })
+}
+
 interface SelectProjectLocationImageContext {
     previousAssets: ProjectAssetsData | undefined
+    previousAssetSummaries: AssetSummary[] | undefined
     previousProject: Project | undefined
     targetKey: string
     requestId: number
@@ -338,11 +364,13 @@ export function useSelectProjectLocationImage(projectId: string) {
 
             const assetsQueryKey = queryKeys.projectAssets.all(projectId)
             const projectQueryKey = queryKeys.projectData(projectId)
+            const assetsListKey = queryKeys.assets.list({ scope: 'project', projectId })
 
             await queryClient.cancelQueries({ queryKey: assetsQueryKey })
             await queryClient.cancelQueries({ queryKey: projectQueryKey })
 
             const previousAssets = queryClient.getQueryData<ProjectAssetsData>(assetsQueryKey)
+            const previousAssetSummaries = queryClient.getQueryData<AssetSummary[]>(assetsListKey)
             const previousProject = queryClient.getQueryData<Project>(projectQueryKey)
 
             queryClient.setQueryData<ProjectAssetsData | undefined>(assetsQueryKey, (previous) =>
@@ -351,9 +379,15 @@ export function useSelectProjectLocationImage(projectId: string) {
             queryClient.setQueryData<Project | undefined>(projectQueryKey, (previous) =>
                 applyLocationSelectionToProject(previous, variables.locationId, variables.imageIndex),
             )
+            // 同步更新 useAssets hook 使用的缓存 key
+            queryClient.setQueryData<AssetSummary[] | undefined>(assetsListKey, (previous) => {
+                if (!previous) return previous
+                return applyLocationSelectionToAssetSummaries(previous, variables.locationId, variables.imageIndex)
+            })
 
             return {
                 previousAssets,
+                previousAssetSummaries,
                 previousProject,
                 targetKey,
                 requestId,
@@ -365,6 +399,9 @@ export function useSelectProjectLocationImage(projectId: string) {
             if (latestRequestId !== context.requestId) return
             queryClient.setQueryData(queryKeys.projectAssets.all(projectId), context.previousAssets)
             queryClient.setQueryData(queryKeys.projectData(projectId), context.previousProject)
+            if (context.previousAssetSummaries) {
+                queryClient.setQueryData(queryKeys.assets.list({ scope: 'project', projectId }), context.previousAssetSummaries)
+            }
         },
         onSettled: (_data, _error, variables) => {
             if (variables.confirm) {

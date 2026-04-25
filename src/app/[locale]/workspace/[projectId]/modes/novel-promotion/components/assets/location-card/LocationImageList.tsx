@@ -133,11 +133,21 @@ export default function LocationImageList(props: LocationImageListProps) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (phase !== 'generating' && phase !== 'regenerating' && img.imageUrl) {
+                    console.log('[DEBUG LocationImageList] button click:', {
+                        locationId: props.locationId,
+                        imgIndex: img.imageIndex,
+                        isThisSelected,
+                        slotTaskRunning,
+                        hasImageUrl: !!img.imageUrl,
+                        selectedIndex: props.selectedIndex,
+                    })
+                    // 勾选应尽量只受“该格子自身仍在生成”影响：
+                    // 组任务进行时不应阻断已生成的格子选择
+                    if (slotTaskRunning !== true && img.imageUrl) {
                       props.onSelectImage?.(props.locationId, isThisSelected ? null : img.imageIndex)
                     }
                   }}
-                  disabled={phase === 'generating' || phase === 'regenerating' || !img.imageUrl}
+                  disabled={slotTaskRunning === true || !img.imageUrl}
                   className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm ${isThisSelected
                     ? 'bg-[var(--glass-tone-success-fg)] text-white'
                     : 'bg-[var(--glass-bg-surface-strong)] hover:bg-[var(--glass-accent-from)] hover:text-white'

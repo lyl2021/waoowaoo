@@ -89,7 +89,7 @@ export default function ImageSection({
             alt={t('image.clickToPreview')}
             containerClassName="absolute inset-0 h-full w-full"
             className="absolute inset-0 h-full w-full object-cover"
-            sizes="(max-width: 768px) 100vw, 33vw"
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
           />
         )}
         <div className={`absolute inset-0 ${backdropImageUrl ? 'bg-black/45 backdrop-blur-[1px]' : 'bg-[var(--glass-bg-surface-modal)] backdrop-blur-md'}`} />
@@ -167,7 +167,7 @@ export default function ImageSection({
           className={`w-full h-full object-cover ${onPreviewImage ? 'cursor-zoom-in' : ''}`}
           onClick={onPreviewImage ? () => onPreviewImage(imageUrl) : undefined}
           title={onPreviewImage ? t('image.clickToPreview') : undefined}
-          sizes="(max-width: 768px) 100vw, 33vw"
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
         />
       ) : (
         renderEmptyState()

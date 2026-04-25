@@ -239,6 +239,11 @@ export function useSelectCharacterImage() {
       restoreCharacterQuerySnapshots(queryClient, context.previousQueries)
     },
     onSettled: (_data, _error, variables) => {
+      // 同时失效 unified 缓存，确保 useAssets hook 能获取最新数据
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.assets.all('global'),
+        exact: false,
+      })
       if (variables.confirm) {
         void invalidateCharacters()
       }

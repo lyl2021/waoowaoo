@@ -366,7 +366,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="glass-page min-h-screen">
         <Navbar />
-        <main className="container mx-auto px-4 py-8">
+        <main className="px-4 sm:px-6 lg:px-10 py-8">
           <div className="glass-surface p-6 text-center">
             <p className="text-[var(--glass-tone-danger-fg)] mb-4">{error || t('projectNotFound')}</p>
             <button
@@ -389,7 +389,7 @@ export default function ProjectDetailPage() {
 
       {/* 主内容区 - 占满全部宽度 */}
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-8">
+        <div className="px-4 sm:px-6 lg:px-10 py-8">
           {isGlobalAssetsView && project.novelPromotionData ? (
             // 全局资产视图（确保数据准备好）
             <div>

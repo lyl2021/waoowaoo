@@ -45,7 +45,9 @@ export default function CharacterCardGallery(props: CharacterCardGalleryProps) {
       <div className="grid grid-cols-3 gap-3">
         {props.imageUrlsWithIndex.map(({ url, originalIndex }) => {
           const isThisSelected = props.selectedIndex === originalIndex
-          const isThisTaskRunning = props.isImageTaskRunning(originalIndex) || props.isGroupTaskRunning
+          // 勾选应尽量只受“该格子自身生成任务”影响：
+          // 组任务仍在进行时会导致所有勾选被禁用，从而用户点击“无反应”
+          const isThisTaskRunning = props.isImageTaskRunning(originalIndex)
           return (
             <div key={originalIndex} className="relative group/thumb">
               <div
@@ -79,6 +81,14 @@ export default function CharacterCardGallery(props: CharacterCardGalleryProps) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
+                    console.log('[DEBUG] CharacterCardGallery button click:', {
+                        characterId: props.characterId,
+                        appearanceId: props.appearanceId,
+                        originalIndex,
+                        isThisSelected,
+                        selectedIndex: props.selectedIndex,
+                        isThisTaskRunning,
+                    })
                     if (!isThisTaskRunning) {
                       props.onSelectImage?.(props.characterId, props.appearanceId, isThisSelected ? null : originalIndex)
                     }

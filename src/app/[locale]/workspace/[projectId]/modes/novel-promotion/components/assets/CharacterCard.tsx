@@ -146,18 +146,30 @@ export default function CharacterCard({
   const hasMultipleImages = imageUrlsWithIndex.length > 1
   const serverSelectedIndex = appearance.selectedIndex ?? null
   const resolvedSelectedIndex: number | null = pendingSelectedIndex !== undefined ? pendingSelectedIndex : serverSelectedIndex
-  // 多图时默认选中方案1，避免需要先点击才出现确认按钮
-  const selectedIndex: number | null = hasMultipleImages && resolvedSelectedIndex === null ? 0 : resolvedSelectedIndex
+  // 多图时默认选中方案1：仅在用户未交互且服务端无选中时生效
+  // 用户一旦主动交互（选中或取消），尊重用户的选择
+  const selectedIndex: number | null = pendingSelectedIndex !== undefined
+    ? pendingSelectedIndex
+    : (hasMultipleImages && serverSelectedIndex === null ? 0 : serverSelectedIndex)
 
   // 同步本地选中状态：当服务端数据追上时清除 pending
+  // 注意：取消选中（pendingSelectedIndex === null）时不清理，避免回退到默认值 0
   useEffect(() => {
-    if (pendingSelectedIndex !== undefined && serverSelectedIndex === pendingSelectedIndex) {
+    console.log('[DEBUG] CharacterCard sync effect:', {
+        pendingSelectedIndex,
+        serverSelectedIndex,
+        willClear: pendingSelectedIndex !== undefined && pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex,
+        selectedIndex,
+    })
+    if (pendingSelectedIndex !== undefined && pendingSelectedIndex !== null && serverSelectedIndex === pendingSelectedIndex) {
+      console.log('[DEBUG] CharacterCard clearing pendingSelectedIndex')
       setPendingSelectedIndex(undefined)
     }
   }, [serverSelectedIndex, pendingSelectedIndex])
 
   // 本地选择处理器：立即更新 UI + 通知父组件
   const handleLocalSelectImage = useCallback((characterId: string, appearanceId: string, imageIndex: number | null) => {
+    console.log('[DEBUG] handleLocalSelectImage called:', { characterId, appearanceId, imageIndex, pendingBefore: pendingSelectedIndex })
     setPendingSelectedIndex(imageIndex)
     onSelectImage?.(characterId, appearanceId, imageIndex)
   }, [onSelectImage])
@@ -329,7 +341,10 @@ export default function CharacterCard({
           confirmSelectionState={confirmSelectionState}
           onConfirmSelection={() => {
             setIsConfirmingSelection(true)
-            onConfirmSelection?.(character.id, appearance.id)
+            // 确保无论请求成功/失败都能停止 loading，避免“转了一圈没反应”
+            void Promise.resolve(onConfirmSelection?.(character.id, appearance.id)).finally(() => {
+              setIsConfirmingSelection(false)
+            })
           }}
           isPrimaryAppearance={isPrimaryAppearance}
           voiceSettings={selectionVoiceSettings}
@@ -471,7 +486,7 @@ export default function CharacterCard({
           mode="single"
           characterName={character.name}
           changeReason={appearance.changeReason}
-          aspectClassName="aspect-[3/2]"
+          aspectClassName="aspect-square"
           currentImageUrl={currentImageUrl}
           selectedIndex={selectedIndex}
           hasMultipleImages={hasMultipleImages}
