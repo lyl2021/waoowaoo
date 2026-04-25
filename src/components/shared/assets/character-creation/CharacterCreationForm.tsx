@@ -2,10 +2,11 @@
 
 import type { DragEvent, RefObject } from 'react'
 import { useTranslations } from 'next-intl'
-import { ART_STYLES } from '@/lib/constants'
+import { ART_STYLES, ART_STYLE_CATEGORIES } from '@/lib/constants'
 import CharacterCreationPreview from './CharacterCreationPreview'
 import { AppIcon } from '@/components/ui/icons'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { StyleSelector } from '@/components/selectors/RatioStyleSelectors'
 
 type Mode = 'asset-hub' | 'project'
 
@@ -174,21 +175,12 @@ export default function CharacterCreationForm({
           <label className="glass-field-label block">
             {t('artStyle.title')}
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            {ART_STYLES.map((style) => (
-              <button
-                key={style.value}
-                type="button"
-                onClick={() => setArtStyle(style.value)}
-                className={`glass-btn-base px-3 py-2 rounded-lg text-sm border transition-all justify-start ${artStyle === style.value
-                  ? 'glass-btn-tone-info border-[var(--glass-stroke-focus)]'
-                  : 'glass-btn-soft border-[var(--glass-stroke-base)] text-[var(--glass-text-secondary)]'
-                  }`}
-              >
-                <span>{style.label}</span>
-              </button>
-            ))}
-          </div>
+          <StyleSelector
+            value={artStyle}
+            onChange={setArtStyle}
+            options={ART_STYLES.map(s => ({ value: s.value, label: s.label, description: s.description, category: s.category }))}
+            categories={ART_STYLE_CATEGORIES}
+          />
         </div>
       )}
 

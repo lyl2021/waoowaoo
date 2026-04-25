@@ -194,6 +194,7 @@ export interface StyleOption {
   value: string
   label: string
   description?: string
+  category?: string
   recommended?: boolean
 }
 
@@ -234,8 +235,11 @@ export function StyleSelector({
   const previewOption = hoveredStyle || selectedOption
 
   // 获取选项所属分类
-  const getOptionCategory = (optionValue: string): string => {
-    const parts = optionValue.split('_')
+  const getOptionCategory = (option: StyleOption): string => {
+    if (option.category && categories?.some(c => c.id === option.category)) {
+      return option.category
+    }
+    const parts = option.value.split('_')
     if (parts.length > 1 && categories?.some(c => c.id === parts[0])) {
       return parts[0]
     }
@@ -248,7 +252,7 @@ export function StyleSelector({
   }
 
   // 预览风格的分类
-  const previewCategory = getOptionCategory(previewOption?.value || '')
+  const previewCategory = getOptionCategory(previewOption)
   const previewCategoryInfo = getCategoryInfo(previewCategory)
 
   return (
@@ -278,7 +282,7 @@ export function StyleSelector({
               <div className="p-2">
                 {categories?.map((category) => {
                   const categoryInfo = getCategoryInfo(category.id)
-                  const categoryOptions = options.filter(opt => getOptionCategory(opt.value) === category.id)
+                  const categoryOptions = options.filter(opt => getOptionCategory(opt) === category.id)
                   return (
                     <div key={category.id} className="mb-3 last:mb-0">
                       {/* 分类标题 */}
@@ -289,7 +293,7 @@ export function StyleSelector({
                       <div className="space-y-0.5">
                         {categoryOptions.map((option) => {
                           const isSelected = value === option.value
-                          const optCategoryInfo = getCategoryInfo(getOptionCategory(option.value))
+                          const optCategoryInfo = getCategoryInfo(getOptionCategory(option))
                           return (
                             <button
                               key={option.value}

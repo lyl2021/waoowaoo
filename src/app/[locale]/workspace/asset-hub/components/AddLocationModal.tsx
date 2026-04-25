@@ -3,12 +3,13 @@ import { logError as _ulogError } from '@/lib/logging/core'
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ART_STYLES } from '@/lib/constants'
+import { ART_STYLES, ART_STYLE_CATEGORIES } from '@/lib/constants'
 import { useAiDesignLocation, useCreateAssetHubLocation } from '@/lib/query/hooks'
 import { useImageGenerationCount } from '@/lib/image-generation/use-image-generation-count'
 import TaskStatusInline from '@/components/task/TaskStatusInline'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import { AppIcon } from '@/components/ui/icons'
+import { StyleSelector } from '@/components/selectors/RatioStyleSelectors'
 import type { LocationAvailableSlot } from '@/lib/location-available-slots'
 
 interface AddLocationModalProps {
@@ -169,21 +170,12 @@ export function AddLocationModal({ folderId, onClose, onSuccess }: AddLocationMo
                             <label className="glass-field-label block">
                                 画面风格
                             </label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {ART_STYLES.map((style) => (
-                                    <button
-                                        key={style.value}
-                                        type="button"
-                                        onClick={() => setArtStyle(style.value)}
-                                        className={`glass-btn-base px-3 py-2 rounded-lg text-sm border flex items-center justify-start transition-all ${artStyle === style.value
-                                            ? 'glass-btn-tone-info border-[var(--glass-stroke-focus)]'
-                                            : 'glass-btn-soft border-[var(--glass-stroke-base)] text-[var(--glass-text-secondary)] hover:border-[var(--glass-stroke-strong)]'
-                                            }`}
-                                    >
-                                        <span>{style.label}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            <StyleSelector
+                                value={artStyle}
+                                onChange={setArtStyle}
+                                options={ART_STYLES.map(s => ({ value: s.value, label: s.label, description: s.description, category: s.category }))}
+                                categories={ART_STYLE_CATEGORIES}
+                            />
                         </div>
 
                         {/* 场景描述 */}
