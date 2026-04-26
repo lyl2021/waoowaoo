@@ -25,6 +25,12 @@ import { getImageGenerationCountOptions } from '@/lib/image-generation/count'
 import { useImageGenerationCount } from '@/lib/image-generation/use-image-generation-count'
 import { AppIcon } from '@/components/ui/icons'
 
+// 统一工具按钮样式：透明背景，默认灰色，悬停浅蓝背景+蓝色图标（与音色区域按钮一致）
+const toolBtnClass = 'w-6 h-6 rounded-md flex items-center justify-center bg-transparent hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all disabled:opacity-50 cursor-pointer'
+
+// 标签样式：浅黄背景 / 长椭圆
+const tagClass = 'shrink-0 text-[10px] px-3 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] leading-tight inline-flex items-center'
+
 interface Appearance {
     id: string
     appearanceIndex: number
@@ -50,6 +56,7 @@ interface Character {
 
 interface CharacterCardProps {
     character: Character
+    assetType?: 'character' | 'location' | 'prop'
     folderMap?: Record<string, string>
     onImageClick?: (url: string) => void
     onImageEdit?: (type: 'character' | 'location', id: string, name: string, imageIndex: number, appearanceIndex?: number) => void
@@ -58,7 +65,14 @@ interface CharacterCardProps {
     onVoiceSelect?: (characterId: string) => void
 }
 
-export function CharacterCard({ character, folderMap, onImageClick, onImageEdit, onVoiceDesign, onEdit, onVoiceSelect }: CharacterCardProps) {
+// 类型图标映射
+const typeIconMap = {
+    character: 'user' as const,
+    location: 'mountain' as const,
+    prop: 'package' as const,
+}
+
+export function CharacterCard({ character, assetType = 'character', folderMap, onImageClick, onImageEdit, onVoiceDesign, onEdit, onVoiceSelect }: CharacterCardProps) {
     // 🔥 使用 mutation hooks
     const generateImage = useGenerateCharacterImage()
     const selectImage = useSelectCharacterImage()
@@ -78,6 +92,7 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
     const [activeAppearance, setActiveAppearance] = useState(0)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showDeleteMenu, setShowDeleteMenu] = useState(false)
+    const [showRefreshConfirm, setShowRefreshConfirm] = useState(false)
     const latestSelectRequestRef = useRef(0)
     const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
 
@@ -137,6 +152,7 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
 
     // 生成图片
     const handleGenerate = (count = generationCount) => {
+        setShowRefreshConfirm(false)
         generateImage.mutate(
             {
                 characterId: character.id,
@@ -247,6 +263,20 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
         )
     }
 
+    // 刷新确认 - 触发
+    const handleRefreshClick = () => {
+        setShowRefreshConfirm(true)
+    }
+
+    // 类型图标
+    const typeIconName: 'user' | 'mountain' | 'package' = typeIconMap[assetType] ?? 'user'
+    const TypeIcon = () => (
+        <AppIcon
+            name={typeIconName}
+            className="w-4 h-4 text-[var(--glass-text-tertiary)]"
+        />
+    )
+
     // 多图选择模式
     if (hasMultipleImages) {
         return (
@@ -258,6 +288,7 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                 {/* 顶部：名字 + 操作 */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
+                        <TypeIcon />
                         <span className="text-sm font-semibold text-[var(--glass-text-primary)]">{character.name}</span>
                         <span className="glass-chip glass-chip-neutral px-2 py-0.5 text-xs">{appearance.changeReason}</span>
                         {isPrimaryAppearance ? (
@@ -282,18 +313,15 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                             value={generationCount}
                             options={getImageGenerationCountOptions('character')}
                             onValueChange={setGenerationCount}
-                            onClick={() => {
-                                _ulogInfo('[CharacterCard] 多图模式 - 重新生成按钮点击, characterId:', character.id, 'appearanceCount:', appearanceCount)
-                                handleGenerate(generatedImageCount)
-                            }}
+                            onClick={() => handleRefreshClick()}
                             disabled={isAppearanceTaskRunning}
                             showCountControl={false}
                             ariaLabel={tAssets('image.regenCountPrefix')}
                             className="inline-flex h-6 items-center justify-center gap-1 rounded-md px-1.5 hover:bg-[var(--glass-tone-info-bg)] transition-colors disabled:opacity-50"
                         />
                         {hasPreviousVersion && (
-                            <button onClick={handleUndo} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md" title={tAssets('image.undo')}>
-                                <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-warning-fg)]" />
+                            <button onClick={handleUndo} className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-info-bg)] transition-colors" title={tAssets('image.undo')}>
+                                <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
                             </button>
                         )}
                         <button onClick={(e) => {
@@ -304,7 +332,7 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                                 return
                             }
                             setShowDeleteMenu(!showDeleteMenu)
-                        }} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md">
+                        }} className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-danger-bg)] transition-colors">
                             <AppIcon name="trash" className="w-4 h-4 text-[var(--glass-tone-danger-fg)]" />
                         </button>
                     </div>
@@ -372,7 +400,6 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                     customVoiceUrl={character.customVoiceUrl}
                     onVoiceDesign={onVoiceDesign}
                     onVoiceSelect={onVoiceSelect}
-                    compact={true}
                 />
 
                 {/* 删除菜单 */}
@@ -394,6 +421,19 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                             <div className="flex gap-2 justify-end">
                                 <button onClick={() => setShowDeleteConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
                                 <button onClick={handleDelete} disabled={deleteCharacter.isPending} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed">{t('delete')}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 刷新确认对话框 */}
+                {showRefreshConfirm && (
+                    <div className="fixed inset-0 glass-overlay flex items-center justify-center z-50">
+                        <div className="glass-surface-modal p-4 m-4 max-w-sm">
+                            <p className="mb-4 text-sm text-[var(--glass-text-primary)]">{tAssets('image.confirmRefresh')}</p>
+                            <div className="flex gap-2 justify-end">
+                                <button onClick={() => setShowRefreshConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
+                                <button onClick={() => handleGenerate(generatedImageCount)} disabled={isAppearanceTaskRunning} className="glass-btn-base glass-btn-tone-info px-3 py-1.5 rounded-lg text-sm disabled:opacity-50">{tAssets('image.refresh')}</button>
                             </div>
                         </div>
                     </div>
@@ -422,18 +462,18 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                         {/* 操作按钮 - 非生成时显示 */}
                         {!isAppearanceTaskRunning && (
                             <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => fileInputRef.current?.click()} disabled={uploadImage.isPending} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                                    <AppIcon name="upload" className="w-4 h-4 text-[var(--glass-tone-success-fg)]" />
+                                <button onClick={() => fileInputRef.current?.click()} disabled={uploadImage.isPending} className={toolBtnClass}>
+                                    <AppIcon name="upload" className="w-4 h-4" />
                                 </button>
-                                <button onClick={() => onImageEdit?.('character', character.id, character.name, effectiveSelectedIndex ?? 0, appearance.appearanceIndex)} className="glass-btn-base glass-btn-tone-info h-7 w-7 rounded-full">
+                                <button onClick={() => onImageEdit?.('character', character.id, character.name, effectiveSelectedIndex ?? 0, appearance.appearanceIndex)} className={toolBtnClass}>
                                     <AppIcon name="imageEdit" className="w-4 h-4" />
                                 </button>
-                        <button onClick={() => handleGenerate()} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                                    <AppIcon name="refresh" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
+                                <button onClick={() => handleRefreshClick()} className={toolBtnClass}>
+                                    <AppIcon name="refresh" className="w-4 h-4" />
                                 </button>
                                 {hasPreviousVersion && (
-                                    <button onClick={handleUndo} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                                        <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-warning-fg)]" />
+                                    <button onClick={handleUndo} className={toolBtnClass}>
+                                        <AppIcon name="sparkles" className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
@@ -470,14 +510,16 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
             <div className="p-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 min-w-0">
+                        {/* 类型图标 */}
+                        <TypeIcon />
                         <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{character.name}</h3>
-                        {folderMap && (
-                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
-                                {folderMap[character.folderId ?? ''] || ''}
+                        {folderMap && character.folderId && (
+                            <span className={tagClass}>
+                                {folderMap[character.folderId]}
                             </span>
                         )}
                         {appearance?.artStyle && (
-                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                            <span className={tagClass}>
                                 {appearance.artStyle}
                             </span>
                         )}
@@ -486,13 +528,13 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                         {/* 编辑按钮 */}
                         <button
                             onClick={() => onEdit?.(character, appearance)}
-                            className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md opacity-0 group-hover:opacity-100"
+                            className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all opacity-0 group-hover:opacity-100"
                             title={tAssets('video.panelCard.editPrompt')}
                         >
-                            <AppIcon name="edit" className="w-4 h-4 text-[var(--glass-text-secondary)]" />
+                            <AppIcon name="edit" className="w-4 h-4" />
                         </button>
                         {/* 删除按钮 */}
-                        <button onClick={() => appearanceCount <= 1 ? setShowDeleteConfirm(true) : setShowDeleteMenu(!showDeleteMenu)} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md text-[var(--glass-tone-danger-fg)] opacity-0 group-hover:opacity-100">
+                        <button onClick={() => appearanceCount <= 1 ? setShowDeleteConfirm(true) : setShowDeleteMenu(!showDeleteMenu)} className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--glass-tone-danger-fg)] opacity-0 group-hover:opacity-100 hover:bg-[var(--glass-tone-danger-bg)] transition-all">
                             <AppIcon name="trash" className="w-4 h-4" />
                         </button>
                     </div>
@@ -509,7 +551,9 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                     </div>
                 )}
 
-                {appearance?.description && <p className="mt-2 text-xs text-[var(--glass-text-secondary)] line-clamp-2">{appearance.description}</p>}
+                <div className="mt-2 min-h-[3rem]">
+                    <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-3">{appearance?.description || ''}</p>
+                </div>
 
                 {/* 音色设置 */}
                 <VoiceSettings
@@ -518,7 +562,6 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                     customVoiceUrl={character.customVoiceUrl}
                     onVoiceDesign={onVoiceDesign}
                     onVoiceSelect={onVoiceSelect}
-                    compact={true}
                 />
             </div>
 
@@ -544,6 +587,19 @@ export function CharacterCard({ character, folderMap, onImageClick, onImageEdit,
                         <button onClick={() => { setShowDeleteMenu(false); setShowDeleteConfirm(true) }} className="glass-btn-base glass-btn-soft w-full justify-start rounded-none px-3 py-1.5 text-left text-xs text-[var(--glass-tone-danger-fg)]">{tAssets('character.deleteWhole')}</button>
                     </div>
                 </>
+            )}
+
+            {/* 刷新确认对话框 */}
+            {showRefreshConfirm && (
+                <div className="absolute inset-0 glass-overlay flex items-center justify-center z-20">
+                    <div className="glass-surface-modal p-4 m-4">
+                        <p className="mb-4 text-sm text-[var(--glass-text-primary)]">{tAssets('image.confirmRefresh')}</p>
+                        <div className="flex gap-2 justify-end">
+                            <button onClick={() => setShowRefreshConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
+                            <button onClick={() => handleGenerate()} className="glass-btn-base glass-btn-tone-info px-3 py-1.5 rounded-lg text-sm">{tAssets('image.refresh')}</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

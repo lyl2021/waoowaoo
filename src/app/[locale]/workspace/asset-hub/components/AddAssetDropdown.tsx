@@ -54,9 +54,9 @@ export function AddAssetDropdown({
 
     const menuItems = [
         { label: t('addCharacter'), icon: 'user' as const, action: onAddCharacter },
-        { label: t('addLocation'), icon: 'image' as const, action: onAddLocation },
-        { label: t('addProp'), icon: 'diamond' as const, action: onAddProp },
-        { label: t('addVoice'), icon: 'mic' as const, action: onAddVoice },
+        { label: t('addLocation'), icon: 'mountain' as const, action: onAddLocation },
+        { label: t('addProp'), icon: 'package' as const, action: onAddProp },
+        { label: t('addVoice'), icon: 'audioWave' as const, action: onAddVoice },
     ]
 
     return (

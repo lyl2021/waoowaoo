@@ -14,6 +14,8 @@ vi.mock('@/lib/query/hooks', () => ({
   useGenerateLocationImage: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useCreateProjectLocation: vi.fn(() => ({ mutateAsync: vi.fn() })),
   useGenerateProjectLocationImage: vi.fn(() => ({ mutateAsync: vi.fn() })),
+  useUploadAssetHubTempMedia: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUploadProjectTempMedia: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
 const messages = {

@@ -43,11 +43,11 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
       onClick={onClose}
       style={{ margin: 0, padding: 0 }}
     >
-      <div className="relative max-w-[98vw] max-h-[98vh] p-1">
+      <div className="relative w-screen h-screen p-2 flex items-center justify-center">
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors backdrop-blur-sm"
+          className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-all backdrop-blur-sm hover:scale-105"
         >
           <AppIcon name="close" className="w-6 h-6" />
         </button>
@@ -57,7 +57,7 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="absolute top-3 right-16 z-10 px-3 h-10 inline-flex items-center rounded-full bg-black/40 hover:bg-black/60 text-white text-sm transition-colors backdrop-blur-sm"
+            className="absolute top-4 right-20 z-10 px-4 h-11 inline-flex items-center rounded-full bg-black/50 hover:bg-black/70 text-white text-sm transition-all backdrop-blur-sm hover:scale-105"
           >
             {t('viewOriginal')}
           </a>
@@ -67,8 +67,8 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
         <MediaImageWithLoading
           src={displayImageUrl}
           alt={t('preview')}
-          containerClassName="max-w-full max-h-[98vh] rounded-3xl"
-          className="max-w-full max-h-[98vh] object-contain rounded-3xl shadow-2xl"
+          containerClassName="w-full h-full flex items-center justify-center"
+          className="max-w-[95vw] max-h-[92vh] object-contain rounded-2xl shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         />
       </div>

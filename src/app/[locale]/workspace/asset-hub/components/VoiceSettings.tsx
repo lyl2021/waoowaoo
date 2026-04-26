@@ -3,6 +3,10 @@
 /**
  * 音色设置组件 - 从 CharacterCard 提取
  * 支持上传自定义音频和 AI 声音设计
+ *
+ * 重新设计：紧凑行布局，左侧状态指示 + 右侧操作图标（hover显示）
+ * 有音色时：蓝色播放按钮 + "试听音色" 文字
+ * 无音色时：淡黄色圆点 + "配音音色(无音色)"文字
  */
 
 import { useRef, useState } from 'react'
@@ -19,7 +23,6 @@ interface VoiceSettingsProps {
     onVoiceChange?: (characterId: string, customVoiceUrl?: string) => void
     onVoiceDesign?: (characterId: string, characterName: string) => void
     onVoiceSelect?: (characterId: string) => void  // 从音色库选择
-    compact?: boolean  // 紧凑模式（单图卡片用）
 }
 
 export default function VoiceSettings({
@@ -30,7 +33,6 @@ export default function VoiceSettings({
     onVoiceChange,
     onVoiceDesign,
     onVoiceSelect,
-    compact = false
 }: VoiceSettingsProps) {
     const t = useTranslations('assetHub')
     // 🔥 使用 mutation hook
@@ -44,7 +46,8 @@ export default function VoiceSettings({
     const hasCustomVoice = !!customVoiceUrl
 
     // 预览音色（播放/暂停自定义音频）
-    const handlePreviewVoice = async () => {
+    const handlePreviewVoice = async (e: React.MouseEvent) => {
+        e.stopPropagation()
         if (!customVoiceUrl) return
 
         // 如果正在播放，点击则暂停
@@ -99,29 +102,60 @@ export default function VoiceSettings({
         )
     }
 
-    // 紧凑模式样式
-    const containerClass = compact
-        ? 'glass-surface-soft border border-[var(--glass-stroke-base)] rounded-xl p-3'
-        : 'mt-4 glass-surface-soft border border-[var(--glass-stroke-base)] rounded-xl p-4'
+    const handleUploadClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        voiceFileInputRef.current?.click()
+    }
 
-    const headerClass = compact
-        ? 'flex items-center gap-2 mb-2 pb-2 border-b'
-        : 'flex items-center gap-2 mb-3 pb-2 border-b'
+    const handleDesignClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onVoiceDesign?.(characterId, characterName)
+    }
 
-    const iconSize = compact ? 'w-5 h-5' : 'w-6 h-6'
-    const innerIconSize = compact ? 'w-3 h-3' : 'w-3.5 h-3.5'
+    const handleSelectClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onVoiceSelect?.(characterId)
+    }
+
+    // 右侧操作图标（hover 时显示）- 固定尺寸撑开位置
+    const actionIcons = (
+        <div className="flex items-center gap-1">
+            {/* 上传音频 */}
+            <button
+                onClick={handleUploadClick}
+                disabled={uploadVoice.isPending}
+                className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all disabled:opacity-50"
+                title={hasCustomVoice ? t('voiceSettings.uploaded') : t('voiceSettings.uploadAudio')}
+            >
+                <AppIcon name="upload" className="w-3.5 h-3.5" />
+            </button>
+
+            {/* AI 声音设计 */}
+            {onVoiceDesign && (
+                <button
+                    onClick={handleDesignClick}
+                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all"
+                    title={t('voiceSettings.aiDesign')}
+                >
+                    <AppIcon name="bolt" className="w-3.5 h-3.5" />
+                </button>
+            )}
+
+            {/* 从音色库选择 */}
+            {onVoiceSelect && (
+                <button
+                    onClick={handleSelectClick}
+                    className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all"
+                    title={t('voiceSettings.voiceLibrary')}
+                >
+                    <AppIcon name="folderCards" className="w-3.5 h-3.5" />
+                </button>
+            )}
+        </div>
+    )
 
     return (
-        <div className={containerClass}>
-            <div className={`${headerClass} ${hasCustomVoice ? 'border-[var(--glass-stroke-base)]' : 'border-[var(--glass-stroke-warning)]'}`}>
-                <div className={`${iconSize} rounded-full flex items-center justify-center ${hasCustomVoice ? 'glass-chip glass-chip-neutral p-0' : 'glass-chip glass-chip-warning p-0'}`}>
-                    <AppIcon name="mic" className={`${innerIconSize} ${hasCustomVoice ? 'text-[var(--glass-text-secondary)]' : 'text-[var(--glass-tone-warning-fg)]'}`} />
-                </div>
-                <span className={`text-${compact ? 'xs' : 'sm'} font-medium ${hasCustomVoice ? 'text-[var(--glass-text-secondary)]' : 'text-[var(--glass-tone-warning-fg)]'}`}>
-                    {t('voiceSettings.title')}{!hasCustomVoice && <span className="text-[var(--glass-tone-warning-fg)]">({t('voiceSettings.noVoice')})</span>}
-                </span>
-            </div>
-
+        <>
             {/* 隐藏的音频文件输入 */}
             <input
                 ref={voiceFileInputRef}
@@ -131,62 +165,50 @@ export default function VoiceSettings({
                 className="hidden"
             />
 
-            <div className="flex gap-2 w-full justify-center flex-wrap">
-                <button
-                    onClick={() => voiceFileInputRef.current?.click()}
-                    disabled={uploadVoice.isPending}
-                    className="glass-btn-base glass-btn-secondary flex-1 min-w-[70px] px-2 py-1.5 rounded-lg text-xs font-medium transition-all relative group whitespace-nowrap"
-                >
-                    <div className="flex items-center justify-center gap-1">
-                        {hasCustomVoice && <div className="w-1.5 h-1.5 bg-[var(--glass-tone-success-fg)] rounded-full flex-shrink-0"></div>}
-                        <span>{uploadVoice.isPending ? t('voiceSettings.uploading') : hasCustomVoice ? t('voiceSettings.uploaded') : t('voiceSettings.uploadAudio')}</span>
-                    </div>
-                </button>
+            <div className="mt-2 flex items-center justify-between group/voice">
+                {/* 左侧：状态指示器 */}
+                <div className="flex items-center gap-2 min-w-0">
+                    {hasCustomVoice ? (
+                        /* 有音色：播放按钮（内嵌文字） */
+                        <>
+                            <button
+                                onClick={handlePreviewVoice}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                                    isPreviewingVoice
+                                        ? 'bg-[var(--glass-tone-info-bg)] text-white'
+                                        : 'bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)] hover:brightness-90'
+                                }`}
+                                title={isPreviewingVoice ? t('voiceSettings.pause') : t('voiceSettings.preview')}
+                            >
+                                {isPreviewingVoice ? (
+                                    <>
+                                        <AppIcon name="pause" className="w-3 h-3" />
+                                        <span>{t('voiceSettings.pause')}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AppIcon name="play" className="w-3 h-3" />
+                                        <span>{t('voiceSettings.preview')}</span>
+                                    </>
+                                )}
+                            </button>
+                        </>
+                    ) : (
+                        /* 无音色：淡黄色圆点 + 文字 */
+                        <>
+                            <div className="w-2 h-2 rounded-full bg-[#fcd34d] shrink-0" />
+                            <span className="text-xs text-[#b45309]/70 whitespace-nowrap">
+                                配音音色{`(无音色)`}
+                            </span>
+                        </>
+                    )}
+                </div>
 
-                {onVoiceDesign && (
-                    <button
-                        onClick={() => onVoiceDesign(characterId, characterName)}
-                        className="glass-btn-base glass-btn-tone-info flex-1 min-w-[70px] px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
-                    >
-                        <div className="flex items-center justify-center gap-1">
-                            <AppIcon name="bolt" className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span>{t('voiceSettings.aiDesign')}</span>
-                        </div>
-                    </button>
-                )}
-
-                {onVoiceSelect && (
-                    <button
-                        onClick={() => onVoiceSelect(characterId)}
-                        className="glass-btn-base glass-btn-secondary flex-1 min-w-[70px] px-2 py-1.5 rounded-lg text-xs text-[var(--glass-tone-info-fg)] font-medium transition-all whitespace-nowrap"
-                    >
-                        <div className="flex items-center justify-center gap-1">
-                            <AppIcon name="folderCards" className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span>{t('voiceSettings.voiceLibrary')}</span>
-                        </div>
-                    </button>
-                )}
+                {/* 右侧：操作图标（hover 显示） */}
+                <div className="opacity-0 group-hover/voice:opacity-100 transition-opacity">
+                    {actionIcons}
+                </div>
             </div>
-
-            {/* 试听按钮 - 仅在有音频时显示 */}
-            {hasCustomVoice && (
-                <button
-                    onClick={handlePreviewVoice}
-                    className={`glass-btn-base w-full mt-2 px-3 py-2 border rounded-lg text-sm font-medium transition-all ${isPreviewingVoice
-                        ? 'glass-btn-tone-info border-[var(--glass-stroke-focus)]'
-                        : 'glass-btn-secondary text-[var(--glass-tone-info-fg)] border-[var(--glass-stroke-base)]'
-                        }`}
-                >
-                    <div className="flex items-center justify-center gap-2">
-                        {isPreviewingVoice ? (
-                            <AppIcon name="pause" className="w-4 h-4" />
-                        ) : (
-                            <AppIcon name="play" className="w-4 h-4" />
-                        )}
-                        {isPreviewingVoice ? t('voiceSettings.pause') : t('voiceSettings.preview')}
-                    </div>
-                </button>
-            )}
-        </div>
+        </>
     )
 }

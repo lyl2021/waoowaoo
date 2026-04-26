@@ -48,6 +48,7 @@ import {
   Mic,
   Minus,
   Monitor,
+  Mountain,
   Pause,
   Pencil,
   Play,
@@ -186,6 +187,7 @@ export const iconRegistry = {
   film: Film,
   folderOpen: FolderOpen,
   gripVertical: GripVertical,
+  mountain: Mountain,
 } as const satisfies Record<string, LucideIcon>
 
 export type AppIconName = keyof typeof iconRegistry

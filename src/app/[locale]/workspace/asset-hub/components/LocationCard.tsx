@@ -26,6 +26,19 @@ import {
 } from '@/lib/image-generation/slot-state'
 import { AppIcon } from '@/components/ui/icons'
 
+// 统一工具按钮样式：透明背景，默认灰色，悬停浅蓝背景+蓝色图标（与音色区域按钮一致）
+const toolBtnClass = 'w-6 h-6 rounded-md flex items-center justify-center bg-transparent hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all disabled:opacity-50 cursor-pointer'
+
+// 标签样式：浅黄背景 / 长椭圆
+const tagClass = 'shrink-0 text-[10px] px-3 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] leading-tight inline-flex items-center'
+
+// 类型图标映射
+const typeIconMap = {
+  character: 'user' as const,
+  location: 'mountain' as const,
+  prop: 'package' as const,
+}
+
 interface LocationImage {
   id: string
   imageIndex: number
@@ -67,11 +80,11 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
 
   const t = useTranslations('assetHub')
   const tAssets = useTranslations('assets')
-  const assetLabel = assetType === 'prop' ? t('propLabel') : t('locationLabel')
   const { count: generationCount, setCount: setGenerationCount } = useImageGenerationCount('location')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false)
   const [pendingSelectedIndex, setPendingSelectedIndex] = useState<number | null | undefined>(undefined)
   const latestSelectRequestRef = useRef(0)
 
@@ -109,7 +122,6 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
     requestedCount: generatedImageCount > 1 ? generatedImageCount : generationCount,
   })
   const displaySlotCount = displaySelectionImages.length
-  const hasMultipleImages = generatedImageCount > 1
   const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-[3/2]' : 'aspect-square'
   const displayTaskPresentation = isTaskRunning
     ? resolveTaskPresentationState({
@@ -135,6 +147,7 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
 
   // 生成图片
   const handleGenerate = (count = generationCount) => {
+    setShowRefreshConfirm(false)
     generateImage.mutate({
       locationId: location.id,
       artStyle: location.artStyle || undefined,
@@ -142,6 +155,11 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
     }, {
       onError: (error) => alert(error.message || t('generateFailed'))
     })
+  }
+
+  // 刷新确认 - 触发
+  const handleRefreshClick = () => {
+    setShowRefreshConfirm(true)
   }
 
   // 选择图片（依赖 query 缓存乐观更新 + 本地 pending 状态）
@@ -215,6 +233,15 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
     })
   }
 
+  // 类型图标
+  const typeIconName: 'user' | 'mountain' | 'package' = typeIconMap[assetType] ?? 'image'
+  const TypeIcon = () => (
+    <AppIcon
+      name={typeIconName}
+      className="w-4 h-4 text-[var(--glass-text-tertiary)]"
+    />
+  )
+
   // 多图选择模式
   if (displaySlotCount > 1) {
     const selectionStatusText = isTaskRunning || generatedImageCount < displaySlotCount
@@ -231,7 +258,11 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
+              <TypeIcon />
               <span className="text-sm font-semibold text-[var(--glass-text-primary)]">{location.name}</span>
+              {location.artStyle && (
+                <span className={tagClass}>{location.artStyle}</span>
+              )}
             </div>
             {location.summary && (
               <div className="text-xs text-[var(--glass-text-secondary)] mb-1 line-clamp-2" title={location.summary}>
@@ -256,18 +287,18 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
               value={generationCount}
               options={getImageGenerationCountOptions('location')}
               onValueChange={setGenerationCount}
-              onClick={() => handleGenerate(generatedImageCount)}
+              onClick={() => handleRefreshClick()}
               disabled={isTaskRunning}
               showCountControl={false}
               ariaLabel={tAssets('image.regenCountPrefix')}
               className="inline-flex h-6 items-center justify-center gap-1 rounded-md px-1.5 hover:bg-[var(--glass-tone-info-bg)] transition-colors disabled:opacity-50"
             />
             {hasPreviousVersion && (
-              <button onClick={handleUndo} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md" title={tAssets('image.undo')}>
-                <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-warning-fg)]" />
+              <button onClick={handleUndo} className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-info-bg)] transition-colors" title={tAssets('image.undo')}>
+                <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
               </button>
             )}
-            <button onClick={() => setShowDeleteConfirm(true)} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md">
+            <button onClick={() => setShowDeleteConfirm(true)} className="h-6 w-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-danger-bg)] transition-colors">
               <AppIcon name="trash" className="w-4 h-4 text-[var(--glass-tone-danger-fg)]" />
             </button>
           </div>
@@ -387,6 +418,19 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
             </div>
           </div>
         )}
+
+        {/* 刷新确认 */}
+        {showRefreshConfirm && (
+          <div className="absolute inset-0 glass-overlay flex items-center justify-center z-20 rounded-xl">
+            <div className="glass-surface-modal p-4 m-4">
+              <p className="mb-4 text-sm text-[var(--glass-text-primary)]">{tAssets('image.confirmRefresh')}</p>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowRefreshConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
+                <button onClick={() => handleGenerate(generatedImageCount)} disabled={isTaskRunning} className="glass-btn-base glass-btn-tone-info px-3 py-1.5 rounded-lg text-sm disabled:opacity-50">{tAssets('image.refresh')}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -410,21 +454,21 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
             {/* 操作按钮 - 非生成时显示 */}
             {!isTaskRunning && (
               <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => fileInputRef.current?.click()} disabled={uploadImage.isPending} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                  <AppIcon name="upload" className="w-4 h-4 text-[var(--glass-tone-success-fg)]" />
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploadImage.isPending} className={toolBtnClass}>
+                  <AppIcon name="upload" className="w-4 h-4" />
                 </button>
-                      <button
-                        onClick={() => onImageEdit?.(assetType === 'prop' ? 'prop' : 'location', location.id, location.name, currentImageIndex)}
-                        className="glass-btn-base glass-btn-tone-info h-7 w-7 rounded-full"
-                      >
-                        <AppIcon name="imageEdit" className="w-4 h-4" />
-                      </button>
-                <button onClick={() => handleGenerate()} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                  <AppIcon name="refresh" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
+                <button
+                  onClick={() => onImageEdit?.(assetType === 'prop' ? 'prop' : 'location', location.id, location.name, currentImageIndex)}
+                  className={toolBtnClass}
+                >
+                  <AppIcon name="imageEdit" className="w-4 h-4" />
+                </button>
+                <button onClick={() => handleRefreshClick()} className={toolBtnClass}>
+                  <AppIcon name="refresh" className="w-4 h-4" />
                 </button>
                 {hasPreviousVersion && (
-                  <button onClick={handleUndo} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
-                    <AppIcon name="sparkles" className="w-4 h-4 text-[var(--glass-tone-warning-fg)]" />
+                  <button onClick={handleUndo} className={toolBtnClass}>
+                    <AppIcon name="sparkles" className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -462,36 +506,39 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-1.5 min-w-0">
+              {/* 类型图标 */}
+              <TypeIcon />
               <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{location.name}</h3>
-              {folderMap && (
-                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
-                  {folderMap[location.folderId ?? ''] || ''}
+              {folderMap && location.folderId && (
+                <span className={tagClass}>
+                  {folderMap[location.folderId]}
                 </span>
               )}
               {location.artStyle && (
-                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                <span className={tagClass}>
                   {location.artStyle}
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-[var(--glass-text-tertiary)]">{assetLabel}</p>
           </div>
           <div className="flex items-center gap-1">
             {/* 编辑按钮 */}
             <button
               onClick={() => onEdit?.(location, currentImageIndex)}
-              className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md opacity-0 group-hover:opacity-100"
+              className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all opacity-0 group-hover:opacity-100"
               title={tAssets('video.panelCard.editPrompt')}
             >
-              <AppIcon name="edit" className="w-4 h-4 text-[var(--glass-text-secondary)]" />
+              <AppIcon name="edit" className="w-4 h-4" />
             </button>
             {/* 删除按钮 */}
-            <button onClick={() => setShowDeleteConfirm(true)} className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md text-[var(--glass-tone-danger-fg)] opacity-0 group-hover:opacity-100">
+            <button onClick={() => setShowDeleteConfirm(true)} className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--glass-tone-danger-fg)] opacity-0 group-hover:opacity-100 hover:bg-[var(--glass-tone-danger-bg)] transition-all">
               <AppIcon name="trash" className="w-4 h-4" />
             </button>
           </div>
         </div>
-        {location.summary && <p className="mt-1 text-xs text-[var(--glass-text-secondary)] line-clamp-2">{location.summary}</p>}
+        <div className="mt-1 min-h-[3rem]">
+          <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-3">{location.summary || ''}</p>
+        </div>
       </div>
 
       {/* 删除确认 */}
@@ -504,6 +551,19 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowDeleteConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
               <button onClick={handleDelete} disabled={deleteLocation.isPending} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed">{t('delete')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 刷新确认 */}
+      {showRefreshConfirm && (
+        <div className="absolute inset-0 glass-overlay flex items-center justify-center z-20">
+          <div className="glass-surface-modal p-4 m-4">
+            <p className="mb-4 text-sm text-[var(--glass-text-primary)]">{tAssets('image.confirmRefresh')}</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowRefreshConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
+              <button onClick={() => handleGenerate()} disabled={isTaskRunning} className="glass-btn-base glass-btn-tone-info px-3 py-1.5 rounded-lg text-sm disabled:opacity-50">{tAssets('image.refresh')}</button>
             </div>
           </div>
         </div>

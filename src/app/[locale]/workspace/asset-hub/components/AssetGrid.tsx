@@ -252,7 +252,7 @@ export function AssetGrid({
                     {(filter === 'all' || filter === 'location') && locations.length > 0 && (
                         <section>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 3xl:grid-cols-6 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 3xl:grid-cols-8 gap-4">
                                 {locationsPage.items.map((location) => (
                                     <LocationCard
                                         key={location.id}
@@ -292,7 +292,7 @@ export function AssetGrid({
                     {(filter === 'all' || filter === 'voice') && voices.length > 0 && (
                         <section>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-8 3xl:grid-cols-8 gap-4">
                                 {voicesPage.items.map((voice) => (
                                     <VoiceCard
                                         key={voice.id}

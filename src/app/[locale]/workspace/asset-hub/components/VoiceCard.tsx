@@ -5,6 +5,9 @@ import { useTranslations } from 'next-intl'
 import { useDeleteVoice } from '@/lib/query/mutations'
 import { AppIcon } from '@/components/ui/icons'
 
+// 标签样式：浅黄背景 / 长椭圆
+const tagClass = 'shrink-0 text-[10px] px-3 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] leading-tight inline-flex items-center'
+
 interface Voice {
     id: string
     name: string
@@ -35,7 +38,8 @@ export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, sele
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     // 播放预览
-    const handlePlay = () => {
+    const handlePlay = (e: React.MouseEvent) => {
+        e.stopPropagation()
         if (!voice.customVoiceUrl) return
 
         if (isPlaying && audioRef.current) {
@@ -79,55 +83,56 @@ export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, sele
                 </div>
             )}
 
-            {/* 音色卡片：紧凑行布局 */}
-            <div className="flex items-center gap-3 p-3">
-                {/* 播放按钮 */}
-                {voice.customVoiceUrl ? (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); handlePlay() }}
-                        className={`w-10 h-10 rounded-full glass-btn-base flex items-center justify-center shrink-0 transition-all ${isPlaying
-                            ? 'glass-btn-tone-info animate-pulse'
-                            : 'glass-btn-secondary text-[var(--glass-tone-info-fg)]'
-                            }`}
-                    >
-                        {isPlaying ? (
-                            <AppIcon name="pause" className="w-5 h-5" />
-                        ) : (
-                            <AppIcon name="play" className="w-5 h-5" />
-                        )}
-                    </button>
-                ) : (
-                    <div className="w-10 h-10 rounded-full bg-[var(--glass-bg-muted)] flex items-center justify-center shrink-0">
-                        <AppIcon name="play" className="w-5 h-5 text-[var(--glass-text-tertiary)]" />
-                    </div>
-                )}
-
-                {/* 名称和描述 */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
+            {/* 信息区域 */}
+            <div className="p-3">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 min-w-0">
+                        <AppIcon name="audioWave" className="w-4 h-4 text-[var(--glass-text-tertiary)] shrink-0" />
                         <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{voice.name}</h3>
-                        {folderMap && (
-                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
-                                {folderMap[voice.folderId ?? ''] || ''}
+                        {/* 试听音色按钮 - 放在名称后 */}
+                        {voice.customVoiceUrl && (
+                            <button
+                                onClick={handlePlay}
+                                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all shrink-0 ${
+                                    isPlaying
+                                        ? 'bg-[var(--glass-tone-info-bg)] text-white'
+                                        : 'bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)] hover:brightness-90'
+                                }`}
+                            >
+                                {isPlaying ? (
+                                    <>
+                                        <AppIcon name="pause" className="w-2.5 h-2.5" />
+                                        <span>{t('voiceSettings.pause')}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <AppIcon name="play" className="w-2.5 h-2.5" />
+                                        <span>{t('voiceSettings.preview')}</span>
+                                    </>
+                                )}
+                            </button>
+                        )}
+                        {folderMap && voice.folderId && (
+                            <span className={tagClass}>
+                                {folderMap[voice.folderId] || ''}
                             </span>
                         )}
                     </div>
+                    <div className="flex items-center gap-1">
                         {!selectionMode && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
-                                className="glass-btn-base glass-btn-soft h-6 w-6 rounded-md text-[var(--glass-tone-danger-fg)] flex items-center justify-center opacity-0 group-hover:opacity-100 shrink-0"
+                                className="h-6 w-6 rounded-md flex items-center justify-center text-[var(--glass-tone-danger-fg)] opacity-0 group-hover:opacity-100 hover:bg-[var(--glass-tone-danger-bg)] transition-all"
                             >
                                 <AppIcon name="trash" className="w-4 h-4" />
                             </button>
                         )}
                     </div>
-                    {voice.description && (
-                        <p className="mt-0.5 text-xs text-[var(--glass-text-secondary)] line-clamp-2">{voice.description}</p>
-                    )}
-                    {voice.voicePrompt && !voice.description && (
-                        <p className="mt-0.5 text-xs text-[var(--glass-text-tertiary)] line-clamp-2 italic">{voice.voicePrompt}</p>
-                    )}
+                </div>
+                <div className="mt-1 min-h-[3rem]">
+                    <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-3">
+                        {voice.description || voice.voicePrompt || ''}
+                    </p>
                 </div>
             </div>
 
