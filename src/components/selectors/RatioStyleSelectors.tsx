@@ -216,6 +216,7 @@ export function StyleSelector({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredStyle, setHoveredStyle] = useState<StyleOption | null>(null)
+  const [imgError, setImgError] = useState(false)
   const { triggerRef, panelRef, panelStyle } = useFloatingDropdown(isOpen, 520)
 
   useEffect(() => {
@@ -233,6 +234,11 @@ export function StyleSelector({
 
   const selectedOption = options.find((o) => o.value === value) || options[0]
   const previewOption = hoveredStyle || selectedOption
+
+  // 切换预览风格时重置图片加载状态
+  useEffect(() => {
+    setImgError(false)
+  }, [previewOption?.value])
 
   // 获取选项所属分类
   const getOptionCategory = (option: StyleOption): string => {
@@ -334,10 +340,21 @@ export function StyleSelector({
 
             {/* 右侧：预览信息 */}
             <div className="flex-1 p-4 flex flex-col">
-              {/* 预览卡片 */}
-              <div className={`flex-1 flex flex-col items-center justify-center rounded-xl mb-3 ${previewCategoryInfo.bg}`}>
-                <div className={`text-2xl font-bold mb-1 ${previewCategoryInfo.text}`}>{previewOption?.label}</div>
-                <div className="text-xs opacity-70">{previewCategoryInfo.label} · {previewOption?.value}</div>
+              {/* 预览卡片 - 示例图片 */}
+              <div className="flex-1 rounded-xl mb-3 overflow-hidden relative">
+                {imgError ? (
+                  <div className={`w-full h-full flex flex-col items-center justify-center ${previewCategoryInfo.bg}`}>
+                    <div className={`text-2xl font-bold mb-1 ${previewCategoryInfo.text}`}>{previewOption?.label}</div>
+                    <div className="text-xs opacity-70">{previewCategoryInfo.label} · {previewOption?.value}</div>
+                  </div>
+                ) : (
+                  <img
+                    src={`/images/style-examples/${previewOption?.value}.png`}
+                    alt={previewOption?.label || ''}
+                    className="w-full h-full object-cover absolute inset-0"
+                    onError={() => setImgError(true)}
+                  />
+                )}
               </div>
               {/* 风格描述 */}
               <div className="text-center">
