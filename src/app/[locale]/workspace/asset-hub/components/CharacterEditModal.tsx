@@ -98,6 +98,7 @@ export function CharacterEditModal({
         updateName.mutate(
             { characterId, name: editingName.trim() },
             {
+                onSuccess: () => onRefresh(),
                 onError: (error) => {
                     if (shouldShowError(error)) {
                         alert(t('modal.saveName') + t('errors.failed'))

@@ -3,17 +3,17 @@
 import { useTranslations } from 'next-intl'
 import { AppIcon } from '@/components/ui/icons'
 
-interface Folder {
+interface Group {
     id: string
     name: string
 }
 
 interface FolderSidebarProps {
-    folders: Folder[]
+    folders: Group[]
     selectedFolderId: string | null
     onSelectFolder: (folderId: string | null) => void
     onCreateFolder: () => void
-    onEditFolder: (folder: Folder) => void
+    onEditFolder: (folder: Group) => void
     onDeleteFolder: (folderId: string) => void
 }
 
@@ -44,22 +44,26 @@ export function FolderSidebar({
 }: FolderSidebarProps) {
     const t = useTranslations('assetHub')
 
+    // selectedFolderId === null → "全部分组" (All Groups, no filter)
+    // selectedFolderId === '__default__' → "默认分组" (Default Group, null folderId)
+    // selectedFolderId === folder.id → specific group
+
     return (
         <div className="w-48 flex-shrink-0">
             <div className="glass-surface p-4">
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-[var(--glass-text-secondary)]">{t('folders')}</h3>
+                    <h3 className="text-sm font-medium text-[var(--glass-text-secondary)]">{t('groups')}</h3>
                     <button
                         onClick={onCreateFolder}
                         className="glass-btn-base glass-btn-primary h-6 w-6 rounded-full flex items-center justify-center"
-                        title={t('newFolder')}
+                        title={t('newGroup')}
                     >
                         <PlusIcon className="w-4 h-4" />
                     </button>
                 </div>
 
                 <div className="space-y-1">
-                    {/* 所有资产 */}
+                    {/* 全部分组 */}
                     <button
                         onClick={() => onSelectFolder(null)}
                         className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${selectedFolderId === null
@@ -68,10 +72,27 @@ export function FolderSidebar({
                             }`}
                     >
                         <FolderIcon className="w-4 h-4" />
-                        <span className="truncate">{t('allAssets')}</span>
+                        <span className="truncate">{t('allGroups')}</span>
                     </button>
 
-                    {/* 文件夹列表 */}
+                    {/* 默认分组 */}
+                    <button
+                        onClick={() => onSelectFolder('__default__')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${selectedFolderId === '__default__'
+                                ? 'bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)]'
+                                : 'text-[var(--glass-text-secondary)] hover:bg-[var(--glass-bg-muted)]'
+                            }`}
+                    >
+                        <FolderIcon className="w-4 h-4" />
+                        <span className="truncate">{t('defaultGroup')}</span>
+                    </button>
+
+                    {/* 分隔线 */}
+                    {folders.length > 0 && (
+                        <div className="my-1 h-px bg-[var(--glass-stroke-base)]" />
+                    )}
+
+                    {/* 分组列表 */}
                     {folders.map((folder) => (
                         <div
                             key={folder.id}
@@ -96,7 +117,7 @@ export function FolderSidebar({
                                         onEditFolder(folder)
                                     }}
                                     className="glass-btn-base glass-btn-soft h-5 w-5 rounded flex items-center justify-center"
-                                    title={t('editFolder')}
+                                    title={t('editGroup')}
                                 >
                                     <PencilIcon className="w-3 h-3" />
                                 </button>
@@ -106,7 +127,7 @@ export function FolderSidebar({
                                         onDeleteFolder(folder.id)
                                     }}
                                     className="glass-btn-base glass-btn-tone-danger h-5 w-5 rounded flex items-center justify-center"
-                                    title={t('deleteFolder')}
+                                    title={t('deleteGroup')}
                                 >
                                     <TrashIcon className="w-3 h-3" />
                                 </button>
@@ -116,7 +137,7 @@ export function FolderSidebar({
 
                     {folders.length === 0 && (
                         <div className="text-xs text-[var(--glass-text-tertiary)] text-center py-4">
-                            {t('noFolders')}
+                            {t('noGroups')}
                         </div>
                     )}
                 </div>

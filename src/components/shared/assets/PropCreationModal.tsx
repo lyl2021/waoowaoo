@@ -13,6 +13,7 @@ import { getImageGenerationCountOptions } from '@/lib/image-generation/count'
 export interface PropCreationModalProps {
   mode: 'asset-hub' | 'project'
   folderId?: string | null
+  folders?: Array<{ id: string; name: string }>
   projectId?: string
   onClose: () => void
   onSuccess: () => void
@@ -21,11 +22,13 @@ export interface PropCreationModalProps {
 export function PropCreationModal({
   mode,
   folderId,
+  folders,
   projectId,
   onClose,
   onSuccess,
 }: PropCreationModalProps) {
   const t = useTranslations('assetModal')
+  const tHub = useTranslations('assetHub')
   const actions = useAssetActions({
     scope: mode === 'asset-hub' ? 'global' : 'project',
     projectId,
@@ -37,6 +40,9 @@ export function PropCreationModal({
   const [description, setDescription] = useState('')
   const [artStyle, setArtStyle] = useState('american-comic')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [groupFolderId, setGroupFolderId] = useState<string | null>(
+    mode === 'asset-hub' ? (folderId ?? null) : null
+  )
   const submittingState = isSubmitting
     ? resolveTaskPresentationState({
       phase: 'processing',
@@ -64,7 +70,7 @@ export function PropCreationModal({
         name: name.trim(),
         summary: summary.trim(),
         description: description.trim(),
-        folderId,
+        folderId: groupFolderId,
         artStyle,
       }) as { assetId?: string }
       if (generateAfterCreate) {
@@ -139,6 +145,22 @@ export function PropCreationModal({
             </div>
           </div>
         </div>
+
+        {mode === 'asset-hub' && folders && (
+          <div className="px-6 pb-4 space-y-2">
+            <label className="glass-field-label block">{tHub('selectGroup')}</label>
+            <select
+              value={groupFolderId ?? '__default__'}
+              onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
+              className="glass-input-base w-full px-3 py-2 text-sm"
+            >
+              <option value="__default__">{tHub('defaultGroup')}</option>
+              {folders.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-xl flex-shrink-0">
           <button

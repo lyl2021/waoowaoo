@@ -36,7 +36,7 @@ export default function AssetHubPage() {
     const { count: characterGenerationCount } = useImageGenerationCount('character')
     const { count: locationGenerationCount } = useImageGenerationCount('location')
 
-    // 文件夹选择状态
+    // 分组选择状态 (null = 全部, '__default__' = 默认分组, uuid = 自定义分组)
     const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
 
     // 使用 React Query 获取数据
@@ -85,6 +85,7 @@ export default function AssetHubPage() {
     const [characterEditModal, setCharacterEditModal] = useState<{
         characterId: string
         characterName: string
+        folderId: string | null
         appearanceId: string
         appearanceIndex: number
         changeReason: string
@@ -96,6 +97,7 @@ export default function AssetHubPage() {
     const [locationEditModal, setLocationEditModal] = useState<{
         locationId: string
         locationName: string
+        folderId: string | null
         summary: string
         imageIndex: number
         artStyle: string | null
@@ -104,8 +106,10 @@ export default function AssetHubPage() {
     const [propEditModal, setPropEditModal] = useState<{
         propId: string
         propName: string
+        folderId: string | null
         summary: string
         description: string
+        artStyle: string | null
         variantId?: string
     } | null>(null)
 
@@ -146,7 +150,7 @@ export default function AssetHubPage() {
 
     // 删除文件夹
     const handleDeleteFolder = async (folderId: string) => {
-        if (!confirm(t('confirmDeleteFolder'))) return
+        if (!confirm(t('confirmDeleteGroup'))) return
 
         try {
             const res = await apiFetch(`/api/asset-hub/folders/${folderId}`, {
@@ -254,6 +258,7 @@ export default function AssetHubPage() {
         const typedCharacter = character as {
             id: string
             name: string
+            folderId: string | null
             appearances: Array<{
                 id: string
                 appearanceIndex: number
@@ -271,6 +276,7 @@ export default function AssetHubPage() {
         setCharacterEditModal({
             characterId: typedCharacter.id,
             characterName: typedCharacter.name,
+            folderId: typedCharacter.folderId,
             appearanceId: typedAppearance.id,
             appearanceIndex: typedAppearance.appearanceIndex,
             changeReason: typedAppearance.changeReason || t('appearanceLabel', { index: typedAppearance.appearanceIndex }),
@@ -284,6 +290,7 @@ export default function AssetHubPage() {
         const typedLocation = location as {
             id: string
             name: string
+            folderId: string | null
             summary: string | null
             artStyle: string | null
             images: Array<{ imageIndex: number; description: string | null }>
@@ -292,6 +299,7 @@ export default function AssetHubPage() {
         setLocationEditModal({
             locationId: typedLocation.id,
             locationName: typedLocation.name,
+            folderId: typedLocation.folderId,
             summary: typedLocation.summary || '',
             imageIndex: imageIndex,
             artStyle: typedLocation.artStyle || null,
@@ -303,15 +311,19 @@ export default function AssetHubPage() {
         const typedProp = prop as {
             id: string
             name: string
+            folderId: string | null
             summary: string | null
+            artStyle?: string | null
             images: Array<{ id: string; imageIndex: number; description: string | null }>
         }
         const variant = typedProp.images.find((image) => image.imageIndex === imageIndex)
         setPropEditModal({
             propId: typedProp.id,
             propName: typedProp.name,
+            folderId: typedProp.folderId,
             summary: typedProp.summary || '',
             description: variant?.description || typedProp.summary || '',
+            artStyle: typedProp.artStyle || null,
             variantId: variant?.id,
         })
     }
@@ -459,6 +471,20 @@ export default function AssetHubPage() {
     const propCount = assets.filter(a => a.kind === 'prop').length
     const voiceCount = assets.filter(a => a.kind === 'voice').length
 
+    // Build folderMap for card tags
+    const folderMap = Object.fromEntries(
+        folders.map(f => [f.id, f.name])
+    )
+    // Also map null folderId to default group name
+    folderMap[''] = t('defaultGroup')
+
+    // Calculate per-group counts for FolderDropdown
+    const defaultGroupCount = assets.filter(a => a.folderId === null || a.folderId === undefined).length
+    const folderCounts = folders.reduce<Record<string, number>>((acc, f) => {
+        acc[f.id] = assets.filter(a => a.folderId === f.id).length
+        return acc
+    }, {})
+
     const tabs = [
         { value: 'all', label: `${t('allAssets')} [${totalCount}]` },
         { value: 'character', label: `${t('characters')} [${characterCount}]` },
@@ -493,6 +519,9 @@ export default function AssetHubPage() {
                         <FolderDropdown
                             folders={folders}
                             selectedFolderId={selectedFolderId}
+                            totalCount={totalCount}
+                            defaultGroupCount={defaultGroupCount}
+                            folderCounts={folderCounts}
                             onSelectFolder={setSelectedFolderId}
                             onCreateFolder={() => {
                                 setEditingFolder(null)
@@ -538,6 +567,7 @@ export default function AssetHubPage() {
                     assets={assets}
                     loading={loading}
                     filter={filter}
+                    folderMap={folderMap}
                     onAddCharacter={() => setShowAddCharacter(true)}
                     onAddLocation={() => setShowAddLocation(true)}
                     onAddProp={() => setShowAddProp(true)}
@@ -557,6 +587,7 @@ export default function AssetHubPage() {
                 <CharacterCreationModal
                     mode="asset-hub"
                     folderId={selectedFolderId}
+                    folders={folders}
                     onClose={() => setShowAddCharacter(false)}
                     onSuccess={() => {
                         setShowAddCharacter(false)
@@ -571,6 +602,7 @@ export default function AssetHubPage() {
                 <LocationCreationModal
                     mode="asset-hub"
                     folderId={selectedFolderId}
+                    folders={folders}
                     onClose={() => setShowAddLocation(false)}
                     onSuccess={() => {
                         setShowAddLocation(false)
@@ -584,6 +616,7 @@ export default function AssetHubPage() {
                 <PropCreationModal
                     mode="asset-hub"
                     folderId={selectedFolderId}
+                    folders={folders}
                     onClose={() => setShowAddProp(false)}
                     onSuccess={() => {
                         setShowAddProp(false)
@@ -595,7 +628,7 @@ export default function AssetHubPage() {
             {/* 文件夹编辑弹窗 */}
             {showFolderModal && (
                 <FolderModal
-                    folder={editingFolder}
+                    group={editingFolder}
                     onClose={() => {
                         setShowFolderModal(false)
                         setEditingFolder(null)
@@ -645,12 +678,16 @@ export default function AssetHubPage() {
                     mode="asset-hub"
                     characterId={characterEditModal.characterId}
                     characterName={characterEditModal.characterName}
+                    folderId={characterEditModal.folderId}
+                    folders={folders}
                     appearanceId={characterEditModal.appearanceId}
                     appearanceIndex={characterEditModal.appearanceIndex}
                     changeReason={characterEditModal.changeReason}
                     description={characterEditModal.description}
+                    artStyle={characterEditModal.artStyle}
                     onClose={() => setCharacterEditModal(null)}
                     onSave={handleCharacterEditGenerate}
+                    onRefresh={refreshAssets}
                 />
             )}
 
@@ -660,11 +697,15 @@ export default function AssetHubPage() {
                     mode="asset-hub"
                     locationId={locationEditModal.locationId}
                     locationName={locationEditModal.locationName}
+                    folderId={locationEditModal.folderId}
+                    folders={folders}
                     summary={locationEditModal.summary}
                     imageIndex={locationEditModal.imageIndex}
                     description={locationEditModal.description}
+                    artStyle={locationEditModal.artStyle}
                     onClose={() => setLocationEditModal(null)}
                     onSave={handleLocationEditGenerate}
+                    onRefresh={refreshAssets}
                 />
             )}
 
@@ -673,8 +714,11 @@ export default function AssetHubPage() {
                     mode="asset-hub"
                     propId={propEditModal.propId}
                     propName={propEditModal.propName}
+                    folderId={propEditModal.folderId}
+                    folders={folders}
                     summary={propEditModal.summary}
                     description={propEditModal.description}
+                    artStyle={propEditModal.artStyle}
                     variantId={propEditModal.variantId}
                     onClose={() => setPropEditModal(null)}
                     onRefresh={refreshAssets}
@@ -686,6 +730,7 @@ export default function AssetHubPage() {
                 <VoiceCreationModal
                     isOpen={showAddVoice}
                     folderId={selectedFolderId}
+                    folders={folders}
                     onClose={() => setShowAddVoice(false)}
                     onSuccess={() => {
                         setShowAddVoice(false)

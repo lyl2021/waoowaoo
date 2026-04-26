@@ -959,6 +959,7 @@ async function updateGlobalAsset(input: AssetUpdateInput) {
     if (input.body.name !== undefined) updateData.name = normalizeString(input.body.name)
     if (input.body.summary !== undefined) updateData.summary = normalizeString(input.body.summary) || null
     if (input.body.folderId !== undefined) updateData.folderId = normalizeString(input.body.folderId) || null
+    if (input.body.artStyle !== undefined) updateData.artStyle = normalizeString(input.body.artStyle) || null
     const location = await prisma.globalLocation.update({
       where: { id: input.assetId },
       data: updateData,
@@ -980,6 +981,7 @@ async function updateGlobalAsset(input: AssetUpdateInput) {
     if (input.body.name !== undefined) updateData.name = normalizeString(input.body.name)
     if (input.body.summary !== undefined) updateData.summary = normalizeString(input.body.summary) || null
     if (input.body.folderId !== undefined) updateData.folderId = normalizeString(input.body.folderId) || null
+    if (input.body.artStyle !== undefined) updateData.artStyle = normalizeString(input.body.artStyle) || null
     const prop = await prisma.globalLocation.update({
       where: { id: input.assetId },
       data: updateData,

@@ -9,6 +9,7 @@ import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import {
     useAiModifyCharacterDescription,
     useAiModifyProjectAppearanceDescription,
+    useAssetActions,
     useUpdateCharacterAppearanceDescription,
     useUpdateCharacterName,
     useUpdateProjectAppearanceDescription,
@@ -16,11 +17,15 @@ import {
     useUpdateProjectCharacterName,
 } from '@/lib/query/hooks'
 import { AiModifyDescriptionField } from './AiModifyDescriptionField'
+import { ART_STYLES } from '@/lib/constants'
 
 export interface CharacterEditModalProps {
     mode: 'asset-hub' | 'project'
     characterId: string
     characterName: string
+    folderId?: string | null
+    folders?: Array<{ id: string; name: string }>
+    artStyle?: string | null
     description: string
     appearanceIndex?: number
     changeReason?: string
@@ -41,6 +46,9 @@ export function CharacterEditModal({
     mode,
     characterId,
     characterName,
+    folderId,
+    folders,
+    artStyle,
     description,
     appearanceIndex,
     changeReason,
@@ -57,6 +65,7 @@ export function CharacterEditModal({
     onRefresh,
 }: CharacterEditModalProps) {
     const t = useTranslations('assets')
+    const tHub = useTranslations('assetHub')
 
     const appearanceKey = mode === 'asset-hub'
         ? String(appearanceIndex ?? 0)
@@ -65,6 +74,8 @@ export function CharacterEditModal({
     const [editingName, setEditingName] = useState(characterName)
     const [editingDescription, setEditingDescription] = useState(description)
     const [editingIntroduction, setEditingIntroduction] = useState(introduction || '')
+    const [editingFolderId, setEditingFolderId] = useState<string | null>(folderId ?? null)
+    const [editingArtStyle, setEditingArtStyle] = useState<string>(artStyle ?? 'american-comic')
     const [aiModifyInstruction, setAiModifyInstruction] = useState('')
     const [isAiModifying, setIsAiModifying] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -100,6 +111,11 @@ export function CharacterEditModal({
     const updateProjectIntroduction = useUpdateProjectCharacterIntroduction(projectId ?? '')
     const aiModifyAssetHub = useAiModifyCharacterDescription()
     const aiModifyProject = useAiModifyProjectAppearanceDescription(projectId ?? '')
+    const assetActions = useAssetActions({
+        scope: mode === 'asset-hub' ? 'global' : 'project',
+        projectId,
+        kind: 'character',
+    })
 
     const getErrorMessage = (error: unknown, fallback: string) => {
         if (error instanceof Error && error.message) return error.message
@@ -149,6 +165,21 @@ export function CharacterEditModal({
             introduction: nextIntro,
         })
         onIntroductionUpdate?.(nextIntro)
+    }
+
+    const persistFolderIdIfNeeded = async () => {
+        const newFolderId = editingFolderId ?? null
+        if (newFolderId !== (folderId ?? null)) {
+            await assetActions.update(characterId, { folderId: newFolderId })
+        }
+    }
+
+    const persistArtStyleIfNeeded = async () => {
+        if (!appearanceId) return
+        const newArtStyle = editingArtStyle
+        if (newArtStyle !== (artStyle ?? 'american-comic')) {
+            await assetActions.updateVariant(characterId, appearanceId, { artStyle: newArtStyle })
+        }
     }
 
     const handleAiModify = async () => {
@@ -214,6 +245,8 @@ export function CharacterEditModal({
             await persistNameIfNeeded()
             await persistDescription()
             await persistIntroductionIfNeeded()
+            await persistFolderIdIfNeeded()
+            await persistArtStyleIfNeeded()
 
             onUpdate?.(editingDescription)
             onRefresh?.()
@@ -237,6 +270,8 @@ export function CharacterEditModal({
                 await persistNameIfNeeded()
                 await persistDescription()
                 await persistIntroductionIfNeeded()
+                await persistFolderIdIfNeeded()
+                await persistArtStyleIfNeeded()
 
                 onUpdate?.(savedDescription)
                 onRefresh?.()
@@ -333,6 +368,36 @@ export function CharacterEditModal({
                         actionLabel={t('modal.modifyDescription')}
                         cancelLabel={t('common.cancel')}
                     />
+
+                    {mode === 'asset-hub' && folders && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="glass-field-label block">{tHub('selectGroup')}</label>
+                                <select
+                                    value={editingFolderId ?? '__default__'}
+                                    onChange={(e) => setEditingFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    <option value="__default__">{tHub('defaultGroup')}</option>
+                                    {folders.map((g) => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="glass-field-label block">{t('artStyle')}</label>
+                                <select
+                                    value={editingArtStyle}
+                                    onChange={(e) => setEditingArtStyle(e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    {ART_STYLES.map((s) => (
+                                        <option key={s.value} value={s.value}>{s.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-lg flex-shrink-0">

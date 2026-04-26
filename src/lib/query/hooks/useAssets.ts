@@ -127,7 +127,10 @@ function buildQueryPath(input: AssetQueryInput): string {
   if (input.projectId) {
     searchParams.set('projectId', input.projectId)
   }
-  if (input.folderId) {
+  if (input.folderId === '__default__') {
+    // Default group: filter by null folderId
+    searchParams.set('folderId', '__default__')
+  } else if (input.folderId) {
     searchParams.set('folderId', input.folderId)
   }
   if (input.kind) {

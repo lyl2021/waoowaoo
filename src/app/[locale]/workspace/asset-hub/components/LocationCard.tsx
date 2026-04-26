@@ -10,6 +10,7 @@ import {
   useUploadLocationImage,
   useDeleteLocation
 } from '@/lib/query/mutations'
+import { useRefreshGlobalAssets } from '@/lib/query/hooks'
 import { MediaImageWithLoading } from '@/components/media/MediaImageWithLoading'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import TaskStatusOverlay from '@/components/task/TaskStatusOverlay'
@@ -24,8 +25,6 @@ import {
   resolveDisplayImageSlots,
 } from '@/lib/image-generation/slot-state'
 import { AppIcon } from '@/components/ui/icons'
-import { AI_EDIT_BUTTON_CLASS, AI_EDIT_ICON_CLASS } from '@/components/ui/ai-edit-style'
-import AISparklesIcon from '@/components/ui/icons/AISparklesIcon'
 
 interface LocationImage {
   id: string
@@ -51,18 +50,20 @@ interface Location {
 interface LocationCardProps {
   location: Location
   assetType?: 'location' | 'prop'
+  folderMap?: Record<string, string>
   onImageClick?: (url: string) => void
   onImageEdit?: (type: 'character' | 'location' | 'prop', id: string, name: string, imageIndex: number) => void
   onEdit?: (location: Location, imageIndex: number) => void
 }
 
-export function LocationCard({ location, assetType = 'location', onImageClick, onImageEdit, onEdit }: LocationCardProps) {
+export function LocationCard({ location, assetType = 'location', folderMap, onImageClick, onImageEdit, onEdit }: LocationCardProps) {
   // 🔥 使用 mutation hooks
   const generateImage = useGenerateLocationImage()
   const selectImage = useSelectLocationImage()
   const undoImage = useUndoLocationImage()
   const uploadImage = useUploadLocationImage()
   const deleteLocation = useDeleteLocation()
+  const onRefresh = useRefreshGlobalAssets()
 
   const t = useTranslations('assetHub')
   const tAssets = useTranslations('assets')
@@ -207,7 +208,10 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
   // 删除场景
   const handleDelete = () => {
     deleteLocation.mutate(location.id, {
-      onSettled: () => setShowDeleteConfirm(false)
+      onSettled: () => {
+        setShowDeleteConfirm(false)
+        onRefresh()
+      }
     })
   }
 
@@ -378,7 +382,7 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
               </p>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowDeleteConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
-                <button onClick={handleDelete} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm">{t('delete')}</button>
+                <button onClick={handleDelete} disabled={deleteLocation.isPending} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed">{t('delete')}</button>
               </div>
             </div>
           </div>
@@ -411,9 +415,9 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
                 </button>
                       <button
                         onClick={() => onImageEdit?.(assetType === 'prop' ? 'prop' : 'location', location.id, location.name, currentImageIndex)}
-                        className={`h-7 w-7 rounded-full flex items-center justify-center transition-all active:scale-95 ${AI_EDIT_BUTTON_CLASS}`}
+                        className="glass-btn-base glass-btn-tone-info h-7 w-7 rounded-full"
                       >
-                        <AISparklesIcon className={`w-4 h-4 ${AI_EDIT_ICON_CLASS}`} />
+                        <AppIcon name="imageEdit" className="w-4 h-4" />
                       </button>
                 <button onClick={() => handleGenerate()} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
                   <AppIcon name="refresh" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
@@ -457,7 +461,19 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{location.name}</h3>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{location.name}</h3>
+              {folderMap && (
+                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                  {folderMap[location.folderId ?? ''] || ''}
+                </span>
+              )}
+              {location.artStyle && (
+                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                  {location.artStyle}
+                </span>
+              )}
+            </div>
             <p className="text-[10px] text-[var(--glass-text-tertiary)]">{assetLabel}</p>
           </div>
           <div className="flex items-center gap-1">
@@ -487,7 +503,7 @@ export function LocationCard({ location, assetType = 'location', onImageClick, o
             </p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowDeleteConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
-              <button onClick={handleDelete} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm">{t('delete')}</button>
+              <button onClick={handleDelete} disabled={deleteLocation.isPending} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed">{t('delete')}</button>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import {
     useAiModifyLocationDescription,
     useAiModifyProjectLocationDescription,
+    useAssetActions,
     useUpdateLocationName,
     useUpdateLocationSummary,
     useUpdateProjectLocationDescription,
@@ -16,11 +17,15 @@ import {
 } from '@/lib/query/hooks'
 import type { LocationAvailableSlot } from '@/lib/location-available-slots'
 import { AiModifyDescriptionField } from './AiModifyDescriptionField'
+import { ART_STYLES } from '@/lib/constants'
 
 export interface LocationEditModalProps {
     mode: 'asset-hub' | 'project'
     locationId: string
     locationName: string
+    folderId?: string | null
+    folders?: Array<{ id: string; name: string }>
+    artStyle?: string | null
     description: string
     summary?: string
     imageIndex?: number
@@ -38,6 +43,9 @@ export function LocationEditModal({
     mode,
     locationId,
     locationName,
+    folderId,
+    folders,
+    artStyle,
     description,
     summary,
     imageIndex,
@@ -51,6 +59,7 @@ export function LocationEditModal({
     onRefresh,
 }: LocationEditModalProps) {
     const t = useTranslations('assets')
+    const tHub = useTranslations('assetHub')
 
     const resolvedImageIndex = mode === 'asset-hub'
         ? (imageIndex ?? 0)
@@ -59,6 +68,8 @@ export function LocationEditModal({
     const [editingName, setEditingName] = useState(locationName)
     const [editingDescription, setEditingDescription] = useState(description || summary || '')
     const [availableSlots, setAvailableSlots] = useState<LocationAvailableSlot[]>([])
+    const [editingFolderId, setEditingFolderId] = useState<string | null>(folderId ?? null)
+    const [editingArtStyle, setEditingArtStyle] = useState<string>(artStyle ?? 'american-comic')
     const [aiModifyInstruction, setAiModifyInstruction] = useState('')
     const [isAiModifying, setIsAiModifying] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -93,6 +104,11 @@ export function LocationEditModal({
     const updateProjectDescription = useUpdateProjectLocationDescription(projectId ?? '')
     const aiModifyAssetHub = useAiModifyLocationDescription()
     const aiModifyProject = useAiModifyProjectLocationDescription(projectId ?? '')
+    const assetActions = useAssetActions({
+        scope: mode === 'asset-hub' ? 'global' : 'project',
+        projectId,
+        kind: 'location',
+    })
 
     const getErrorMessage = (error: unknown, fallback: string) => {
         if (error instanceof Error && error.message) return error.message
@@ -127,6 +143,20 @@ export function LocationEditModal({
             description: editingDescription,
             availableSlots,
         })
+    }
+
+    const persistFolderIdIfNeeded = async () => {
+        const newFolderId = editingFolderId ?? null
+        if (newFolderId !== (folderId ?? null)) {
+            await assetActions.update(locationId, { folderId: newFolderId })
+        }
+    }
+
+    const persistArtStyleIfNeeded = async () => {
+        const newArtStyle = editingArtStyle
+        if (newArtStyle !== (artStyle ?? 'american-comic')) {
+            await assetActions.update(locationId, { artStyle: newArtStyle })
+        }
     }
 
     const handleAiModify = async () => {
@@ -193,6 +223,8 @@ export function LocationEditModal({
             setIsSaving(true)
             await persistNameIfNeeded()
             await persistDescription()
+            await persistFolderIdIfNeeded()
+            await persistArtStyleIfNeeded()
 
             onUpdate?.(editingDescription)
             onRefresh?.()
@@ -214,6 +246,8 @@ export function LocationEditModal({
             try {
                 await persistNameIfNeeded()
                 await persistDescription()
+                await persistFolderIdIfNeeded()
+                await persistArtStyleIfNeeded()
                 onUpdate?.(savedDescription)
                 onRefresh?.()
                 onSave(locationId)
@@ -281,6 +315,36 @@ export function LocationEditModal({
                         actionLabel={t('modal.modifyDescription')}
                         cancelLabel={t('common.cancel')}
                     />
+
+                    {mode === 'asset-hub' && folders && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="glass-field-label block">{tHub('selectGroup')}</label>
+                                <select
+                                    value={editingFolderId ?? '__default__'}
+                                    onChange={(e) => setEditingFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    <option value="__default__">{tHub('defaultGroup')}</option>
+                                    {folders.map((g) => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="glass-field-label block">{t('artStyle')}</label>
+                                <select
+                                    value={editingArtStyle}
+                                    onChange={(e) => setEditingArtStyle(e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    {ART_STYLES.map((s) => (
+                                        <option key={s.value} value={s.value}>{s.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-lg flex-shrink-0">

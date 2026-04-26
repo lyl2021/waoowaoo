@@ -39,6 +39,7 @@
         "deleteOptions": "删除选项",
         "name": "角色名",
         "description": "外貌描述",
+        "appearance": "形象",
         "generateImage": "生成形象",
         "regenerateImage": "重新生成",
         "generate": "生成",

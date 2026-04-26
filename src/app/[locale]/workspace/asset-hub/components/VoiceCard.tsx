@@ -20,12 +20,13 @@ interface Voice {
 
 interface VoiceCardProps {
     voice: Voice
+    folderMap?: Record<string, string>
     onSelect?: (voice: Voice) => void  // 选择模式时使用
     isSelected?: boolean  // 是否被选中
     selectionMode?: boolean  // 是否在选择模式
 }
 
-export function VoiceCard({ voice, onSelect, isSelected = false, selectionMode = false }: VoiceCardProps) {
+export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, selectionMode = false }: VoiceCardProps) {
     // 🔥 使用 mutation hook
     const deleteVoice = useDeleteVoice()
     const t = useTranslations('assetHub')
@@ -104,7 +105,14 @@ export function VoiceCard({ voice, onSelect, isSelected = false, selectionMode =
                 {/* 名称和描述 */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                         <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{voice.name}</h3>
+                        {folderMap && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                                {folderMap[voice.folderId ?? ''] || ''}
+                            </span>
+                        )}
+                    </div>
                         {!selectionMode && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}

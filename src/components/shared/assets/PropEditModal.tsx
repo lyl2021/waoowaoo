@@ -12,13 +12,17 @@ import {
   useAssetActions,
 } from '@/lib/query/hooks'
 import { AiModifyDescriptionField } from './AiModifyDescriptionField'
+import { ART_STYLES } from '@/lib/constants'
 
 export interface PropEditModalProps {
   mode: 'asset-hub' | 'project'
   propId: string
   propName: string
+  folderId?: string | null
+  folders?: Array<{ id: string; name: string }>
   summary: string
   description: string
+  artStyle?: string | null
   variantId?: string
   projectId?: string
   onClose: () => void
@@ -29,14 +33,18 @@ export function PropEditModal({
   mode,
   propId,
   propName,
+  folderId,
+  folders,
   summary,
   description,
+  artStyle,
   variantId,
   projectId,
   onClose,
   onRefresh,
 }: PropEditModalProps) {
   const t = useTranslations('assets')
+  const tHub = useTranslations('assetHub')
   const actions = useAssetActions({
     scope: mode === 'asset-hub' ? 'global' : 'project',
     projectId,
@@ -45,6 +53,8 @@ export function PropEditModal({
   const [editingName, setEditingName] = useState(propName)
   const [editingSummary, setEditingSummary] = useState(summary)
   const [editingDescription, setEditingDescription] = useState(description)
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(folderId ?? null)
+  const [editingArtStyle, setEditingArtStyle] = useState(artStyle ?? 'american-comic')
   const [aiModifyInstruction, setAiModifyInstruction] = useState('')
   const [isAiModifying, setIsAiModifying] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -73,10 +83,19 @@ export function PropEditModal({
   }
 
   const persist = async () => {
-    await actions.update(propId, {
+    const payload: Record<string, unknown> = {
       name: editingName.trim(),
       summary: editingSummary.trim(),
-    })
+    }
+    const newFolderId = editingFolderId ?? null
+    if (newFolderId !== (folderId ?? null)) {
+      payload.folderId = newFolderId
+    }
+    const newArtStyle = editingArtStyle
+    if (newArtStyle !== (artStyle ?? 'american-comic')) {
+      payload.artStyle = newArtStyle
+    }
+    await actions.update(propId, payload)
     if (variantId) {
       await actions.updateVariant(propId, variantId, {
         description: editingDescription.trim(),
@@ -198,6 +217,36 @@ export function PropEditModal({
             actionLabel={t('modal.modifyDescription')}
             cancelLabel={t('common.cancel')}
           />
+
+          {mode === 'asset-hub' && folders && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="glass-field-label block">{tHub('selectGroup')}</label>
+                <select
+                  value={editingFolderId ?? '__default__'}
+                  onChange={(e) => setEditingFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                  className="glass-input-base w-full px-3 py-2 text-sm"
+                >
+                  <option value="__default__">{tHub('defaultGroup')}</option>
+                  {folders.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="glass-field-label block">{t('artStyle')}</label>
+                <select
+                  value={editingArtStyle}
+                  onChange={(e) => setEditingArtStyle(e.target.value)}
+                  className="glass-input-base w-full px-3 py-2 text-sm"
+                >
+                  {ART_STYLES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-lg flex-shrink-0">

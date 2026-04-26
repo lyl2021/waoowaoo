@@ -39,6 +39,7 @@
         "deleteOptions": "Delete Options",
         "name": "Character Name",
         "description": "Appearance Description",
+        "appearance": "Appearance",
         "generateImage": "Generate Profile",
         "regenerateImage": "Regenerate",
         "generate": "Generate",

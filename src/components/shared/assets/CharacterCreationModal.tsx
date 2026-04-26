@@ -13,6 +13,7 @@ import { getImageGenerationCountOptions } from '@/lib/image-generation/count'
 export interface CharacterCreationModalProps {
   mode: 'asset-hub' | 'project'
   folderId?: string | null
+  folders?: Array<{ id: string; name: string }>
   projectId?: string
   onClose: () => void
   onSuccess: () => void
@@ -25,11 +26,13 @@ const XMarkIcon = ({ className }: { className?: string }) => (
 export function CharacterCreationModal({
   mode,
   folderId,
+  folders,
   projectId,
   onClose,
   onSuccess,
 }: CharacterCreationModalProps) {
   const t = useTranslations('assetModal')
+  const tHub = useTranslations('assetHub')
 
   const [createMode, setCreateMode] = useState<'reference' | 'description'>('description')
   const [name, setName] = useState('')
@@ -41,6 +44,9 @@ export function CharacterCreationModal({
   const [isSubAppearance, setIsSubAppearance] = useState(false)
   const [selectedCharacterId, setSelectedCharacterId] = useState('')
   const [changeReason, setChangeReason] = useState('')
+  const [groupFolderId, setGroupFolderId] = useState<string | null>(
+    mode === 'asset-hub' ? (folderId ?? null) : null
+  )
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -70,7 +76,7 @@ export function CharacterCreationModal({
     handleSubmitAndGenerate,
   } = useCharacterCreationSubmit({
     mode,
-    folderId,
+    folderId: groupFolderId,
     projectId,
     name,
     description,
@@ -182,6 +188,22 @@ export function CharacterCreationModal({
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
+
+          {mode === 'asset-hub' && folders && (
+            <div className="mb-4 space-y-2">
+              <label className="glass-field-label block">{tHub('selectGroup')}</label>
+              <select
+                value={groupFolderId ?? '__default__'}
+                onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                className="glass-input-base w-full px-3 py-2 text-sm"
+              >
+                <option value="__default__">{tHub('defaultGroup')}</option>
+                {folders.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <CharacterCreationForm
             mode={mode}

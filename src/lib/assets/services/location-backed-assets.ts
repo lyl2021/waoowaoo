@@ -162,9 +162,14 @@ export async function listGlobalLocationBackedAssets(input: {
   kind: LocationBackedAssetKind
   folderId?: string | null
 }): Promise<GlobalLocationBackedAssetRecord[]> {
-  const folderFilter = input.folderId
-    ? Prisma.sql`AND folderId = ${input.folderId}`
-    : Prisma.empty
+  let folderFilter: ReturnType<typeof Prisma.sql>
+  if (input.folderId === '__default__') {
+    folderFilter = Prisma.sql`AND folderId IS NULL`
+  } else if (input.folderId) {
+    folderFilter = Prisma.sql`AND folderId = ${input.folderId}`
+  } else {
+    folderFilter = Prisma.empty
+  }
   const rows = await prisma.$queryRaw<GlobalLocationBackedAssetRow[]>(Prisma.sql`
     SELECT
       id,

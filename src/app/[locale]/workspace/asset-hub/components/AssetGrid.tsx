@@ -15,6 +15,7 @@ interface AssetGridProps {
     assets: AssetSummary[]
     loading: boolean
     filter: 'all' | 'character' | 'location' | 'prop' | 'voice'
+    folderMap?: Record<string, string>
     onAddCharacter: () => void
     onAddLocation: () => void
     onAddProp: () => void
@@ -32,6 +33,7 @@ export function AssetGrid({
     assets,
     loading,
     filter,
+    folderMap,
     onAddCharacter,
     onAddLocation,
     onAddProp,
@@ -233,6 +235,7 @@ export function AssetGrid({
                                     <CharacterCard
                                         key={character.id}
                                         character={character}
+                                        folderMap={folderMap}
                                         onImageClick={onImageClick}
                                         onImageEdit={onImageEdit}
                                         onVoiceDesign={onVoiceDesign}
@@ -254,6 +257,7 @@ export function AssetGrid({
                                     <LocationCard
                                         key={location.id}
                                         location={location}
+                                        folderMap={folderMap}
                                         onImageClick={onImageClick}
                                         onImageEdit={onImageEdit}
                                         onEdit={onLocationEdit}
@@ -273,6 +277,7 @@ export function AssetGrid({
                                         key={prop.id}
                                         location={prop}
                                         assetType="prop"
+                                        folderMap={folderMap}
                                         onImageClick={onImageClick}
                                         onImageEdit={onImageEdit}
                                         onEdit={onPropEdit}
@@ -292,6 +297,7 @@ export function AssetGrid({
                                     <VoiceCard
                                         key={voice.id}
                                         voice={voice}
+                                        folderMap={folderMap}
                                     />
                                 ))}
                             </div>

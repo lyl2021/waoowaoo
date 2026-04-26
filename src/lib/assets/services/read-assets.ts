@@ -57,10 +57,14 @@ async function readProjectAssets(projectId: string): Promise<AssetSummary[]> {
 }
 
 async function readGlobalAssets(input: { folderId?: string | null; userId: string }): Promise<AssetSummary[]> {
-  const folderFilter = input.folderId ? { folderId: input.folderId } : {}
-  const where = {
-    userId: input.userId,
-    ...folderFilter,
+  // folderId: '__default__' → filter by null folderId (default group)
+  // folderId: <uuid> → filter by specific group
+  // folderId: undefined/null → no filter (show all groups)
+  const where: Record<string, unknown> = { userId: input.userId }
+  if (input.folderId === '__default__') {
+    where.folderId = null
+  } else if (input.folderId) {
+    where.folderId = input.folderId
   }
   const [characters, locations, props, voices] = await Promise.all([
     prisma.globalCharacter.findMany({

@@ -17,6 +17,7 @@ import {
 export interface VoiceCreationModalShellProps {
     isOpen: boolean
     folderId: string | null
+    folders?: Array<{ id: string; name: string }>
     onClose: () => void
     onSuccess: () => void
     /** 预填充的音色名称（如发言人名字） */
@@ -25,7 +26,7 @@ export interface VoiceCreationModalShellProps {
 
 type CreationMode = 'design' | 'upload'
 
-export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initialVoiceName }: VoiceCreationModalShellProps) {
+export function useVoiceCreation({ isOpen, folderId, folders, onClose, onSuccess, initialVoiceName }: VoiceCreationModalShellProps) {
     const t = useTranslations('common')
     const tHub = useTranslations('assetHub')
     const tv = useTranslations('voice.voiceDesign')
@@ -41,6 +42,7 @@ export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initial
     const [schemeCount, setSchemeCount] = useState(String(DEFAULT_VOICE_SCHEME_COUNT))
     const [isVoiceCreationSubmitting, setIsVoiceCreationSubmitting] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const [groupFolderId, setGroupFolderId] = useState<string | null>(folderId ?? null)
     const [error, setError] = useState<string | null>(null)
     const [generatedVoices, setGeneratedVoices] = useState<GeneratedVoice[]>([])
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
@@ -147,7 +149,7 @@ export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initial
                 voiceId: voice.voiceId,
                 voiceBase64: voice.audioBase64,
                 voiceName: voiceName.trim(),
-                folderId,
+                folderId: groupFolderId,
                 voicePrompt: voicePrompt.trim()
             })
 
@@ -238,7 +240,7 @@ export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initial
             await uploadVoiceMutation.mutateAsync({
                 uploadFile,
                 voiceName: voiceName.trim(),
-                folderId
+                folderId: groupFolderId
             })
 
             onSuccess()
@@ -254,6 +256,7 @@ export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initial
     // 关闭弹窗
     const handleClose = () => {
         setMode('design')
+        setGroupFolderId(folderId ?? null)
         setVoiceName(initialVoiceName ?? '')
         setVoicePrompt('')
         setPreviewText(tv('defaultPreviewText'))
@@ -311,6 +314,9 @@ export function useVoiceCreation({ isOpen, folderId, onClose, onSuccess, initial
         t,
         tHub,
         tvCreate,
+        groupFolderId,
+        setGroupFolderId,
+        folders,
         setMode,
         setVoiceName,
         setVoicePrompt,

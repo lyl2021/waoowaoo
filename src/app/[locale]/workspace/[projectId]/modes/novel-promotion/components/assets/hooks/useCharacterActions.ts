@@ -70,12 +70,14 @@ export function useCharacterActions({
         if (!confirm(t('character.deleteConfirm'))) return
         try {
             await deleteCharacterMutation.mutateAsync(characterId)
+            // 🔥 刷新缓存（与创建/删除形象保持一致）
+            refreshAssets()
         } catch (error: unknown) {
             if (!isAbortError(error)) {
                 alert(t('character.deleteFailed', { error: getErrorMessage(error, t('common.unknownError')) }))
             }
         }
-    }, [deleteCharacterMutation, t])
+    }, [deleteCharacterMutation, refreshAssets, t])
 
     // 删除单个形象
     const handleDeleteAppearance = useCallback(async (characterId: string, appearanceId: string) => {

@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { AppIcon } from '@/components/ui/icons'
 
-interface Folder {
+interface Group {
     id: string
     name: string
 }
 
 interface FolderModalProps {
-    folder: Folder | null
+    group: Group | null
     onClose: () => void
     onSave: (name: string) => void
 }
@@ -20,9 +20,9 @@ const XMarkIcon = ({ className }: { className?: string }) => (
     <AppIcon name="close" className={className} />
 )
 
-export function FolderModal({ folder, onClose, onSave }: FolderModalProps) {
+export function FolderModal({ group, onClose, onSave }: FolderModalProps) {
     const t = useTranslations('assetHub')
-    const [name, setName] = useState(folder?.name || '')
+    const [name, setName] = useState(group?.name || '')
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,7 +38,7 @@ export function FolderModal({ folder, onClose, onSave }: FolderModalProps) {
                     {/* 标题 */}
                     <div className="flex items-center justify-between mb-5">
                         <h3 className="text-lg font-semibold text-[var(--glass-text-primary)]">
-                            {folder ? t('editFolder') : t('newFolder')}
+                            {group ? t('editGroup') : t('newGroup')}
                         </h3>
                         <button
                             onClick={onClose}
@@ -51,13 +51,13 @@ export function FolderModal({ folder, onClose, onSave }: FolderModalProps) {
                     <form onSubmit={handleSubmit}>
                         <div className="mb-5">
                             <label className="block text-sm font-medium text-[var(--glass-text-secondary)] mb-2">
-                                {t('folderName')}
+                                {t('groupName')}
                             </label>
                             <input
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder={t('folderNamePlaceholder')}
+                                placeholder={t('groupNamePlaceholder')}
                                 className="glass-input-base w-full px-3 py-2 text-sm"
                                 autoFocus
                             />
@@ -76,7 +76,7 @@ export function FolderModal({ folder, onClose, onSave }: FolderModalProps) {
                                 disabled={!name.trim()}
                                 className="glass-btn-base glass-btn-primary px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {folder ? t('save') : t('create')}
+                                {group ? t('save') : t('create')}
                             </button>
                         </div>
                     </form>

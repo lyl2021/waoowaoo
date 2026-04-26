@@ -13,6 +13,7 @@ import {
     useDeleteCharacterAppearance,
     useUploadCharacterVoice
 } from '@/lib/query/mutations'
+import { useRefreshGlobalAssets } from '@/lib/query/hooks'
 import VoiceSettings from './VoiceSettings'
 import { MediaImageWithLoading } from '@/components/media/MediaImageWithLoading'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
@@ -49,6 +50,7 @@ interface Character {
 
 interface CharacterCardProps {
     character: Character
+    folderMap?: Record<string, string>
     onImageClick?: (url: string) => void
     onImageEdit?: (type: 'character' | 'location', id: string, name: string, imageIndex: number, appearanceIndex?: number) => void
     onVoiceDesign?: (characterId: string, characterName: string) => void
@@ -56,7 +58,7 @@ interface CharacterCardProps {
     onVoiceSelect?: (characterId: string) => void
 }
 
-export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDesign, onEdit, onVoiceSelect }: CharacterCardProps) {
+export function CharacterCard({ character, folderMap, onImageClick, onImageEdit, onVoiceDesign, onEdit, onVoiceSelect }: CharacterCardProps) {
     // 🔥 使用 mutation hooks
     const generateImage = useGenerateCharacterImage()
     const selectImage = useSelectCharacterImage()
@@ -65,6 +67,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     const deleteCharacter = useDeleteCharacter()
     const deleteAppearance = useDeleteCharacterAppearance()
     const uploadVoice = useUploadCharacterVoice()
+    const onRefresh = useRefreshGlobalAssets()
 
     const t = useTranslations('assetHub')
     const tAssets = useTranslations('assets')
@@ -211,7 +214,10 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
     // 删除角色
     const handleDelete = () => {
         deleteCharacter.mutate(character.id, {
-            onSettled: () => setShowDeleteConfirm(false)
+            onSettled: () => {
+                setShowDeleteConfirm(false)
+                onRefresh()
+            }
         })
     }
 
@@ -387,7 +393,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
                             <p className="mb-4 text-sm text-[var(--glass-text-primary)]">{t('confirmDeleteCharacter')}</p>
                             <div className="flex gap-2 justify-end">
                                 <button onClick={() => setShowDeleteConfirm(false)} className="glass-btn-base glass-btn-secondary px-3 py-1.5 rounded-lg text-sm">{t('cancel')}</button>
-                                <button onClick={handleDelete} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm">{t('delete')}</button>
+                                <button onClick={handleDelete} disabled={deleteCharacter.isPending} className="glass-btn-base glass-btn-danger px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed">{t('delete')}</button>
                             </div>
                         </div>
                     </div>
@@ -420,7 +426,7 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
                                     <AppIcon name="upload" className="w-4 h-4 text-[var(--glass-tone-success-fg)]" />
                                 </button>
                                 <button onClick={() => onImageEdit?.('character', character.id, character.name, effectiveSelectedIndex ?? 0, appearance.appearanceIndex)} className="glass-btn-base glass-btn-tone-info h-7 w-7 rounded-full">
-                                    <AppIcon name="edit" className="w-4 h-4" />
+                                    <AppIcon name="imageEdit" className="w-4 h-4" />
                                 </button>
                         <button onClick={() => handleGenerate()} className="glass-btn-base glass-btn-secondary h-7 w-7 rounded-full">
                                     <AppIcon name="refresh" className="w-4 h-4 text-[var(--glass-tone-info-fg)]" />
@@ -463,7 +469,19 @@ export function CharacterCard({ character, onImageClick, onImageEdit, onVoiceDes
             {/* 信息区域 */}
             <div className="p-3">
                 <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{character.name}</h3>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{character.name}</h3>
+                        {folderMap && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                                {folderMap[character.folderId ?? ''] || ''}
+                            </span>
+                        )}
+                        {appearance?.artStyle && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[var(--glass-bg-muted)] text-[var(--glass-text-tertiary)] leading-tight">
+                                {appearance.artStyle}
+                            </span>
+                        )}
+                    </div>
                     <div className="flex items-center gap-1">
                         {/* 编辑按钮 */}
                         <button

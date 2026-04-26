@@ -26,6 +26,7 @@ export interface LocationCreationModalProps {
     mode: 'asset-hub' | 'project'
     // Asset Hub 模式使用
     folderId?: string | null
+    folders?: Array<{ id: string; name: string }>
     // 项目模式使用
     projectId?: string
     onClose: () => void
@@ -44,11 +45,13 @@ const SparklesIcon = ({ className }: { className?: string }) => (
 export function LocationCreationModal({
     mode,
     folderId,
+    folders,
     projectId,
     onClose,
     onSuccess
 }: LocationCreationModalProps) {
     const t = useTranslations('assetModal')
+    const tHub = useTranslations('assetHub')
     const aiDesignAssetHubLocation = useAiDesignLocation()
     const createAssetHubLocation = useCreateAssetHubLocation()
     const generateAssetHubLocation = useGenerateLocationImage()
@@ -69,6 +72,9 @@ export function LocationCreationModal({
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isAiDesigning, setIsAiDesigning] = useState(false)
+    const [groupFolderId, setGroupFolderId] = useState<string | null>(
+        mode === 'asset-hub' ? (folderId ?? null) : null
+    )
     const aiDesigningState = isAiDesigning
         ? resolveTaskPresentationState({
             phase: 'processing',
@@ -163,7 +169,7 @@ export function LocationCreationModal({
             }
 
             if (mode === 'asset-hub') {
-                body.folderId = folderId
+                body.folderId = groupFolderId
             }
 
             if (mode === 'asset-hub') {
@@ -171,7 +177,7 @@ export function LocationCreationModal({
                     name: body.name,
                     summary: body.description,
                     artStyle: body.artStyle,
-                    folderId: body.folderId ?? null,
+                    folderId: groupFolderId ?? null,
                     availableSlots,
                 })
             } else {
@@ -207,7 +213,7 @@ export function LocationCreationModal({
                     name: name.trim(),
                     summary: description.trim(),
                     artStyle,
-                    folderId: folderId ?? null,
+                    folderId: groupFolderId ?? null,
                     count: locationGenerationCount,
                     availableSlots,
                 }) as CreatedLocationResponse
@@ -364,6 +370,22 @@ export function LocationCreationModal({
                         </div>
                     </div>
                 </div>
+
+                {mode === 'asset-hub' && folders && (
+                    <div className="px-6 pb-4 space-y-2">
+                        <label className="glass-field-label block">{tHub('selectGroup')}</label>
+                        <select
+                            value={groupFolderId ?? '__default__'}
+                            onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                            className="glass-input-base w-full px-3 py-2 text-sm"
+                        >
+                            <option value="__default__">{tHub('defaultGroup')}</option>
+                            {folders.map((g) => (
+                                <option key={g.id} value={g.id}>{g.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {/* 固定底部按钮区 */}
                 <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-xl flex-shrink-0">

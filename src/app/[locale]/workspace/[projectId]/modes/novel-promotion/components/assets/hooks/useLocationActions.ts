@@ -70,12 +70,14 @@ export function useLocationActions({
             } else {
                 await deleteLocationMutation.mutateAsync(locationId)
             }
+            // 🔥 刷新缓存
+            refreshAssets()
         } catch (error: unknown) {
             if (!isAbortError(error)) {
                 alert(t(`${assetKey}.deleteFailed`, { error: getErrorMessage(error, t('common.unknownError')) }))
             }
         }
-    }, [assetKey, assetType, deleteLocationMutation, propActions, t])
+    }, [assetKey, assetType, deleteLocationMutation, propActions, refreshAssets, t])
 
     // 处理场景图片选择
     const handleSelectLocationImage = useCallback(async (locationId: string, imageIndex: number | null) => {

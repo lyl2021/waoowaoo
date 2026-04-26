@@ -39,7 +39,7 @@ interface Pagination {
   totalPages: number
 }
 
-const PAGE_SIZE = 7 // 加上新建项目按钮正好8个，4列布局下2行
+const PAGE_SIZE = 7
 const DEFAULT_BILLING_CURRENCY = 'CNY'
 
 function formatProjectCost(amount: number, currency = DEFAULT_BILLING_CURRENCY): string {
@@ -335,13 +335,13 @@ export default function WorkspacePage() {
       {/* Main Content */}
       <main className="px-4 sm:px-6 lg:px-10 py-8">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--glass-text-primary)] mb-2">{t('title')}</h1>
+          <div className="flex items-end gap-4">
+            <h1 className="text-3xl font-bold text-[var(--glass-text-primary)]">{t('title')}</h1>
             <p className="text-[var(--glass-text-secondary)]">{t('subtitle')}</p>
           </div>
 
-          {/* 搜索框 */}
-          <div className="flex gap-2">
+          {/* 搜索框 + 新建项目 */}
+          <div className="flex items-center gap-3">
             <input
               type="text"
               value={searchInput}
@@ -368,24 +368,18 @@ export default function WorkspacePage() {
                 {t('clearButton')}
               </button>
             )}
+            <button
+              onClick={() => openCreateModal()}
+              className="glass-btn-base glass-btn-primary px-4 py-2 flex items-center gap-2"
+            >
+              <AppIcon name="plus" className="w-4 h-4" />
+              {t('newProject')}
+            </button>
           </div>
         </div>
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {/* New Project Card */}
-          <div
-            onClick={() => openCreateModal()}
-            className="glass-surface p-6 cursor-pointer group flex items-center justify-center bg-gradient-to-br from-blue-500/5 via-cyan-500/5 to-blue-600/5 hover:from-blue-500/10 hover:via-cyan-500/10 hover:to-blue-600/10 transition-all duration-300"
-          >
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 group-hover:scale-110 transition-all duration-300">
-                <AppIcon name="plus" className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-sm font-medium text-[var(--glass-text-secondary)] group-hover:text-[var(--glass-text-primary)] transition-colors">{t('newProject')}</span>
-            </div>
-          </div>
-
           {/* Project Cards */}
           {loading ? (
             // Loading skeleton

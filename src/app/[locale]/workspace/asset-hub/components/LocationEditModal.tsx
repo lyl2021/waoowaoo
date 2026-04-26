@@ -98,6 +98,7 @@ export function LocationEditModal({
         updateName.mutate(
             { locationId, name: editingName.trim() },
             {
+                onSuccess: () => onRefresh(),
                 onError: (error) => {
                     if (shouldShowError(error)) {
                         alert(t('modal.saveName') + t('errors.failed'))

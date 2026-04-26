@@ -68,6 +68,10 @@ vi.mock('@/app/[locale]/workspace/asset-hub/components/VoiceSettings', () => ({
   default: () => createElement('div', null, 'voice-settings'),
 }))
 
+vi.mock('@/lib/query/hooks', () => ({
+  useRefreshGlobalAssets: () => vi.fn(),
+}))
+
 const messages = {
   assetHub: {
     generateFailed: '生成失败',

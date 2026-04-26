@@ -171,6 +171,7 @@ export default function AssetsStageModals({
           onClose={closeEditingAppearance}
           onSave={(characterId, appearanceId) => void handleGenerateImage('character', characterId, appearanceId)}
           onUpdate={handleUpdateAppearanceDescription}
+          onRefresh={onRefresh}
         />
       )}
 
@@ -184,6 +185,7 @@ export default function AssetsStageModals({
           onClose={closeEditingLocation}
           onSave={(locationId) => void handleGenerateImage('location', locationId)}
           onUpdate={handleUpdateLocationDescription}
+          onRefresh={onRefresh}
         />
       )}
 

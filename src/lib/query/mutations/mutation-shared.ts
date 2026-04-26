@@ -84,6 +84,8 @@ export async function invalidateQueryTemplates(
   templates: QueryKey[],
 ): Promise<void> {
   await Promise.all(
-    templates.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    templates.map((queryKey) =>
+      queryClient.invalidateQueries({ queryKey, refetchType: 'all' }),
+    ),
   )
 }

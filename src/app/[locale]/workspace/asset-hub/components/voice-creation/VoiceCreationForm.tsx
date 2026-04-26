@@ -14,6 +14,9 @@ export default function VoiceCreationForm({ runtime, children }: VoiceCreationFo
     voiceName,
     tHub,
     tvCreate,
+    groupFolderId,
+    setGroupFolderId,
+    folders,
     setVoiceName,
     handleClose,
     handleModeChange,
@@ -58,6 +61,22 @@ export default function VoiceCreationForm({ runtime, children }: VoiceCreationFo
             className="glass-input-base w-full px-3 py-2 text-sm"
           />
         </div>
+
+        {folders && (
+          <div>
+            <label className="glass-field-label mb-1 block">{tHub('selectGroup')}</label>
+            <select
+              value={groupFolderId ?? '__default__'}
+              onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
+              className="glass-input-base w-full px-3 py-2 text-sm"
+            >
+              <option value="__default__">{tHub('defaultGroup')}</option>
+              {folders.map((g: { id: string; name: string }) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {children}
       </div>
