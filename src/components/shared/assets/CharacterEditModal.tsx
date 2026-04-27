@@ -353,6 +353,36 @@ export function CharacterEditModal({
                         </div>
                     )}
 
+                    {mode === 'asset-hub' && folders && (
+                        <div className="flex gap-4 items-start">
+                            <div className="flex-1 min-w-0 space-y-2">
+                                <label className="glass-field-label block">{t('artStyle')}</label>
+                                <select
+                                    value={editingArtStyle}
+                                    onChange={(e) => setEditingArtStyle(e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    {ART_STYLES.map((s) => (
+                                        <option key={s.value} value={s.value}>{s.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-48 shrink-0 space-y-2">
+                                <label className="glass-field-label block">{tHub('selectGroup')}</label>
+                                <select
+                                    value={editingFolderId ?? '__default__'}
+                                    onChange={(e) => setEditingFolderId(e.target.value === '__default__' ? null : e.target.value)}
+                                    className="glass-input-base w-full px-3 py-2 text-sm"
+                                >
+                                    <option value="__default__">{tHub('defaultGroup')}</option>
+                                    {folders.map((g) => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
                     <AiModifyDescriptionField
                         label={t('modal.appearancePrompt')}
                         description={editingDescription}
@@ -368,36 +398,6 @@ export function CharacterEditModal({
                         actionLabel={t('modal.modifyDescription')}
                         cancelLabel={t('common.cancel')}
                     />
-
-                    {mode === 'asset-hub' && folders && (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="glass-field-label block">{tHub('selectGroup')}</label>
-                                <select
-                                    value={editingFolderId ?? '__default__'}
-                                    onChange={(e) => setEditingFolderId(e.target.value === '__default__' ? null : e.target.value)}
-                                    className="glass-input-base w-full px-3 py-2 text-sm"
-                                >
-                                    <option value="__default__">{tHub('defaultGroup')}</option>
-                                    {folders.map((g) => (
-                                        <option key={g.id} value={g.id}>{g.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="glass-field-label block">{t('artStyle')}</label>
-                                <select
-                                    value={editingArtStyle}
-                                    onChange={(e) => setEditingArtStyle(e.target.value)}
-                                    className="glass-input-base w-full px-3 py-2 text-sm"
-                                >
-                                    {ART_STYLES.map((s) => (
-                                        <option key={s.value} value={s.value}>{s.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-lg flex-shrink-0">

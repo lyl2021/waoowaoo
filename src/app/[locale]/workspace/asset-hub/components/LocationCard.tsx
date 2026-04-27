@@ -25,6 +25,7 @@ import {
   resolveDisplayImageSlots,
 } from '@/lib/image-generation/slot-state'
 import { AppIcon } from '@/components/ui/icons'
+import { ART_STYLES } from '@/lib/constants'
 
 // 统一工具按钮样式：透明背景，默认灰色，悬停浅蓝背景+蓝色图标（与音色区域按钮一致）
 const toolBtnClass = 'w-6 h-6 rounded-md flex items-center justify-center bg-transparent hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all disabled:opacity-50 cursor-pointer'
@@ -116,6 +117,14 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
   }
   const displayImageUrl = isValidUrl(currentImageUrl) ? currentImageUrl : null
   const serverTaskRunning = (location.images || []).some((image) => image.imageTaskRunning)
+
+  // 预加载图片到浏览器缓存，提升预览弹窗展开速度
+  useEffect(() => {
+    if (displayImageUrl) {
+      const img = new window.Image()
+      img.src = displayImageUrl
+    }
+  }, [displayImageUrl])
   const transientSubmitting = generateImage.isPending
   const isTaskRunning = serverTaskRunning || transientSubmitting
   const displaySelectionImages = resolveDisplayImageSlots(orderedImages, {
@@ -144,6 +153,11 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
       resource: 'image',
       hasOutput: !!displayImageUrl,
     })
+    : null
+
+  // 漫画风格中文标签
+  const artStyleLabel = location.artStyle
+    ? ART_STYLES.find(s => s.value === location.artStyle)?.label
     : null
 
   // 生成图片
@@ -261,8 +275,8 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
             <div className="flex items-center gap-2 mb-1">
               <TypeIcon />
               <span className="text-sm font-semibold text-[var(--glass-text-primary)]">{location.name}</span>
-              {location.artStyle && (
-                <span className={tagClass}>{location.artStyle}</span>
+              {artStyleLabel && (
+                <span className={tagClass}>{artStyleLabel}</span>
               )}
             </div>
             {location.summary && (
@@ -510,14 +524,14 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
               {/* 类型图标 */}
               <TypeIcon />
               <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{location.name}</h3>
-              {folderMap && location.folderId && (
+              {folderMap && (
                 <span className={tagClass}>
-                  {folderMap[location.folderId]}
+                  {location.folderId ? folderMap[location.folderId] : folderMap['']}
                 </span>
               )}
-              {location.artStyle && (
+              {artStyleLabel && (
                 <span className={tagClass}>
-                  {location.artStyle}
+                  {artStyleLabel}
                 </span>
               )}
             </div>

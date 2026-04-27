@@ -8,7 +8,7 @@ import LanguageSwitcher from './LanguageSwitcher'
 import { AppIcon } from '@/components/ui/icons'
 import UpdateNoticeModal from './UpdateNoticeModal'
 import { useGithubReleaseUpdate } from '@/hooks/common/useGithubReleaseUpdate'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { buildAuthenticatedHomeTarget } from '@/lib/home/default-route'
 
 // 客户端渲染的图片组件，避免 Dark Reader 等扩展导致的水合不匹配
@@ -27,6 +27,11 @@ export default function Navbar() {
   const [checkMsgFading, setCheckMsgFading] = useState(false)
   const [manualChecking, setManualChecking] = useState(false)
   const downloadLogsHref = '/api/admin/download-logs'
+  const router = useRouter()
+
+  const handleAssetHubHover = () => {
+    router.prefetch({ pathname: '/workspace/asset-hub' })
+  }
 
   const handleCheckUpdate = async () => {
     setCheckMsg(null)
@@ -119,6 +124,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href={{ pathname: '/workspace/asset-hub' }}
+                    onMouseEnter={handleAssetHubHover}
                     className="text-sm text-[var(--glass-text-secondary)] hover:text-[var(--glass-text-primary)] font-medium transition-colors flex items-center gap-1"
                   >
                     <AppIcon name="folderHeart" className="w-4 h-4" />

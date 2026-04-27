@@ -701,7 +701,7 @@ export default function AssetHubPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder={t('searchPlaceholder')}
-                                className="w-full glass-btn-base glass-btn-secondary pl-8 pr-3 py-2 rounded-lg text-sm text-[var(--glass-text-primary)] placeholder:text-[var(--glass-text-tertiary)] outline-none"
+                                className="w-full glass-btn-base glass-btn-secondary pl-8 pr-3 py-2 rounded-lg text-sm text-[var(--glass-text-primary)] placeholder:text-gray-400 outline-none"
                             />
                             {searchQuery && (
                                 <button

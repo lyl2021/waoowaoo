@@ -45,6 +45,9 @@ vi.mock('@/i18n/navigation', () => ({
     const resolvedHref = typeof href === 'string' ? href : href.pathname
     return createElement('a', { href: resolvedHref, ...props }, children)
   },
+  useRouter: () => ({
+    prefetch: () => undefined,
+  }),
 }))
 
 const messages = {

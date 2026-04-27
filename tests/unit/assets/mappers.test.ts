@@ -19,6 +19,7 @@ describe('asset mappers', () => {
           id: 'appearance-1',
           appearanceIndex: 0,
           changeReason: '初始形象',
+          artStyle: null,
           description: '短发，风衣',
           imageUrl: 'https://example.com/char.jpg',
           media: null,

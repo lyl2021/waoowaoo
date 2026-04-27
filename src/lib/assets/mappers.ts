@@ -16,6 +16,7 @@ type CharacterAppearanceRecord = {
   id: string
   appearanceIndex: number
   changeReason: string
+  artStyle: string | null
   description: string | null
   imageUrl: string | null
   media?: MediaRef | null
@@ -51,6 +52,7 @@ type GlobalCharacterRecord = {
     id: string
     appearanceIndex: number
     changeReason: string
+    artStyle: string | null
     description: string | null
     imageUrl: string | null
     media?: MediaRef | null
@@ -86,6 +88,7 @@ type GlobalLocationRecord = {
   id: string
   name: string
   summary: string | null
+  artStyle: string | null
   folderId: string | null
   images: LocationImageRecord[]
 }
@@ -101,6 +104,7 @@ type GlobalPropRecord = {
   id: string
   name: string
   summary: string | null
+  artStyle: string | null
   folderId: string | null
   images: LocationImageRecord[]
 }
@@ -140,6 +144,7 @@ function createVariant(params: {
   index: number
   label: string
   description: string | null
+  artStyle: string | null
   selectedRenderIndex: number | null
   renders: AssetRenderSummary[]
   taskRefs: AssetTaskRef[]
@@ -149,6 +154,7 @@ function createVariant(params: {
     index: params.index,
     label: params.label,
     description: params.description,
+    artStyle: params.artStyle,
     renders: params.renders,
     selectionState: {
       selectedRenderIndex: params.selectedRenderIndex,
@@ -185,6 +191,7 @@ export function mapProjectCharacterToAsset(character: ProjectCharacterRecord): C
       index: appearance.appearanceIndex,
       label: appearance.changeReason,
       description: appearance.description,
+      artStyle: null,
       selectedRenderIndex: appearance.selectedIndex,
       renders,
       taskRefs: [
@@ -262,6 +269,7 @@ export function mapGlobalCharacterToAsset(character: GlobalCharacterRecord): Cha
       index: appearance.appearanceIndex,
       label: appearance.changeReason,
       description: appearance.description,
+      artStyle: appearance.artStyle ?? null,
       selectedRenderIndex: appearance.selectedIndex,
       renders,
       taskRefs: [
@@ -324,6 +332,7 @@ function buildLocationVariants(
       index: image.imageIndex,
       label: `Image ${image.imageIndex + 1}`,
       description: image.description,
+      artStyle: null,
       selectedRenderIndex: image.isSelected ? 0 : null,
       renders: [
         createRender({
@@ -363,6 +372,7 @@ function mapLocationLikeProjectAsset(
     name: asset.name,
     folderId: null,
     capabilities: registration.capabilities,
+    artStyle: null,
     taskRefs: [
       {
         targetType: 'LocationImage',
@@ -392,6 +402,7 @@ function mapLocationLikeGlobalAsset(
     family: 'visual',
     name: asset.name,
     folderId: asset.folderId,
+    artStyle: asset.artStyle ?? null,
     capabilities: registration.capabilities,
     taskRefs: [
       {

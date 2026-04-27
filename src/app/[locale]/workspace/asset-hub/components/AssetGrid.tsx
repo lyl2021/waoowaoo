@@ -77,6 +77,7 @@ export function AssetGrid({
             id: variant.id,
             appearanceIndex: variant.index,
             changeReason: variant.label,
+            artStyle: variant.artStyle ?? null,
             description: variant.description,
             imageUrl: variant.renders.find((render) => render.isSelected)?.imageUrl
                 ?? variant.renders[0]?.imageUrl
@@ -93,6 +94,7 @@ export function AssetGrid({
         id: asset.id,
         name: asset.name,
         summary: asset.summary,
+        artStyle: asset.artStyle ?? null,
         folderId: asset.folderId,
         images: asset.variants.map((variant) => ({
             id: variant.id,
@@ -108,6 +110,7 @@ export function AssetGrid({
         id: asset.id,
         name: asset.name,
         summary: asset.summary,
+        artStyle: asset.artStyle ?? null,
         folderId: asset.folderId,
         images: asset.variants.map((variant) => ({
             id: variant.id,

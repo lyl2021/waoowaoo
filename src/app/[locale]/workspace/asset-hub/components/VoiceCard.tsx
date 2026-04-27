@@ -8,6 +8,13 @@ import { AppIcon } from '@/components/ui/icons'
 // 标签样式：浅黄背景 / 长椭圆
 const tagClass = 'shrink-0 text-[10px] px-3 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] leading-tight inline-flex items-center'
 
+// 音色风格中文映射
+const voiceTypeLabels: Record<string, string> = {
+    'qwen-designed': 'AI设计音色',
+    'custom': '自定义音色',
+    'uploaded': '上传音色',
+}
+
 interface Voice {
     id: string
     name: string
@@ -36,6 +43,9 @@ export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, sele
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isPlaying, setIsPlaying] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
+
+    // 音色风格中文标签
+    const voiceTypeLabel = voiceTypeLabels[voice.voiceType]
 
     // 播放预览
     const handlePlay = (e: React.MouseEvent) => {
@@ -89,32 +99,12 @@ export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, sele
                     <div className="flex items-center gap-1.5 min-w-0">
                         <AppIcon name="audioWave" className="w-4 h-4 text-[var(--glass-text-tertiary)] shrink-0" />
                         <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{voice.name}</h3>
-                        {/* 试听音色按钮 - 放在名称后 */}
-                        {voice.customVoiceUrl && (
-                            <button
-                                onClick={handlePlay}
-                                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all shrink-0 ${
-                                    isPlaying
-                                        ? 'bg-[var(--glass-tone-info-bg)] text-white'
-                                        : 'bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)] hover:brightness-90'
-                                }`}
-                            >
-                                {isPlaying ? (
-                                    <>
-                                        <AppIcon name="pause" className="w-2.5 h-2.5" />
-                                        <span>{t('voiceSettings.pause')}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <AppIcon name="play" className="w-2.5 h-2.5" />
-                                        <span>{t('voiceSettings.preview')}</span>
-                                    </>
-                                )}
-                            </button>
+                        {voiceTypeLabel && (
+                            <span className={tagClass}>{voiceTypeLabel}</span>
                         )}
-                        {folderMap && voice.folderId && (
+                        {folderMap && (
                             <span className={tagClass}>
-                                {folderMap[voice.folderId] || ''}
+                                {voice.folderId ? folderMap[voice.folderId] : folderMap['']}
                             </span>
                         )}
                     </div>
@@ -129,6 +119,31 @@ export function VoiceCard({ voice, folderMap, onSelect, isSelected = false, sele
                         )}
                     </div>
                 </div>
+                {/* 试听音色按钮 - 单独一行 */}
+                {voice.customVoiceUrl && (
+                    <div className="mt-1.5">
+                        <button
+                            onClick={handlePlay}
+                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
+                                isPlaying
+                                    ? 'bg-[var(--glass-tone-info-bg)] text-white'
+                                    : 'bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)] hover:brightness-90'
+                            }`}
+                        >
+                            {isPlaying ? (
+                                <>
+                                    <AppIcon name="pause" className="w-2.5 h-2.5" />
+                                    <span>{t('voiceSettings.pause')}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <AppIcon name="play" className="w-2.5 h-2.5" />
+                                    <span>{t('voiceSettings.preview')}</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
                 <div className="mt-1 min-h-[3rem]">
                     <p className="text-xs text-[var(--glass-text-secondary)] line-clamp-3">
                         {voice.description || voice.voicePrompt || ''}

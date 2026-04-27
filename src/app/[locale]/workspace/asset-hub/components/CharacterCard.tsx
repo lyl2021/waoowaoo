@@ -24,6 +24,7 @@ import { PRIMARY_APPEARANCE_INDEX } from '@/lib/constants'
 import { getImageGenerationCountOptions } from '@/lib/image-generation/count'
 import { useImageGenerationCount } from '@/lib/image-generation/use-image-generation-count'
 import { AppIcon } from '@/components/ui/icons'
+import { ART_STYLES } from '@/lib/constants'
 
 // 统一工具按钮样式：透明背景，默认灰色，悬停浅蓝背景+蓝色图标（与音色区域按钮一致）
 const toolBtnClass = 'w-6 h-6 rounded-md flex items-center justify-center bg-transparent hover:bg-[var(--glass-tone-info-bg)] text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] transition-all disabled:opacity-50 cursor-pointer'
@@ -128,6 +129,14 @@ export function CharacterCard({ character, assetType = 'character', folderMap, o
 
     const displayImageUrl = isValidUrl(currentImageUrl) ? currentImageUrl : null
     const serverTaskRunning = !!appearance?.imageTaskRunning
+
+    // 预加载图片到浏览器缓存，提升预览弹窗展开速度
+    useEffect(() => {
+        if (displayImageUrl) {
+            const img = new window.Image()
+            img.src = displayImageUrl
+        }
+    }, [displayImageUrl])
     const transientSubmitting = generateImage.isPending
     const isAppearanceTaskRunning = serverTaskRunning || transientSubmitting
     const taskErrorDisplay = !isAppearanceTaskRunning && appearance?.lastError
@@ -268,6 +277,11 @@ export function CharacterCard({ character, assetType = 'character', folderMap, o
         setShowRefreshConfirm(true)
     }
 
+    // 漫画风格中文标签
+    const artStyleLabel = appearance?.artStyle
+        ? ART_STYLES.find(s => s.value === appearance.artStyle)?.label
+        : null
+
     // 类型图标
     const typeIconName: 'user' | 'mountain' | 'package' = typeIconMap[assetType] ?? 'user'
     const TypeIcon = () => (
@@ -290,6 +304,9 @@ export function CharacterCard({ character, assetType = 'character', folderMap, o
                     <div className="flex items-center gap-2">
                         <TypeIcon />
                         <span className="text-sm font-semibold text-[var(--glass-text-primary)]">{character.name}</span>
+                        {artStyleLabel && (
+                            <span className={tagClass}>{artStyleLabel}</span>
+                        )}
                         <span className="glass-chip glass-chip-neutral px-2 py-0.5 text-xs">{appearance.changeReason}</span>
                         {isPrimaryAppearance ? (
                             <span className="glass-chip glass-chip-success px-2 py-0.5 text-xs">{tAssets('character.primary')}</span>
@@ -513,14 +530,14 @@ export function CharacterCard({ character, assetType = 'character', folderMap, o
                         {/* 类型图标 */}
                         <TypeIcon />
                         <h3 className="font-medium text-[var(--glass-text-primary)] text-sm truncate">{character.name}</h3>
-                        {folderMap && character.folderId && (
+                        {folderMap && (
                             <span className={tagClass}>
-                                {folderMap[character.folderId]}
+                                {character.folderId ? folderMap[character.folderId] : folderMap['']}
                             </span>
                         )}
-                        {appearance?.artStyle && (
+                        {artStyleLabel && (
                             <span className={tagClass}>
-                                {appearance.artStyle}
+                                {artStyleLabel}
                             </span>
                         )}
                     </div>
