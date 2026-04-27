@@ -19,7 +19,7 @@ import { apiFetch } from '@/lib/api-fetch'
 import { expandHomeStory } from '@/lib/home/ai-story-expand'
 
 /** 触发智能分集建议的字数阈值 */
-const LONG_TEXT_THRESHOLD = 1000
+const LONG_TEXT_THRESHOLD = 150
 
 interface NovelInputStageProps {
   // 核心数据
@@ -120,7 +120,7 @@ export default function NovelInputStage({
     : null
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col min-h-full gap-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
 
       {/* 主输入区域 - 填满剩余空间 */}
       <div className="relative flex-1 flex flex-col min-h-0">
