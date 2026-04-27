@@ -486,7 +486,7 @@ export default function CharacterCard({
           mode="single"
           characterName={character.name}
           changeReason={appearance.changeReason}
-          aspectClassName="aspect-square"
+          aspectClassName="aspect-[3/2]"
           currentImageUrl={currentImageUrl}
           selectedIndex={selectedIndex}
           hasMultipleImages={hasMultipleImages}

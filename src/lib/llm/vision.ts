@@ -84,7 +84,10 @@ export async function chatCompletionWithVision(
     try {
       const providerConfig = await getProviderConfig(userId, provider)
       if (providerKey === 'google' || providerKey === 'gemini-compatible') {
-        const ai = new GoogleGenAI({ apiKey: providerConfig.apiKey })
+        const ai = new GoogleGenAI({
+          apiKey: providerConfig.apiKey,
+          httpOptions: providerConfig.baseUrl ? { baseUrl: providerConfig.baseUrl } : undefined,
+        })
         const { normalizeToBase64ForGeneration } = await import('@/lib/media/outbound-image')
 
         const parts: GoogleVisionPart[] = []

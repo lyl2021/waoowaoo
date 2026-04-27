@@ -12,11 +12,18 @@
 - [src/lib/workers/utils.ts](file://src/lib/workers/utils.ts)
 - [src/lib/workers/handlers/image-task-handlers.ts](file://src/lib/workers/handlers/image-task-handlers.ts)
 - [src/lib/workers/handlers/character-image-task-handler.ts](file://src/lib/workers/handlers/character-image-task-handler.ts)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts](file://src/lib/workers/handlers/asset-hub-ai-design.ts)
 - [src/lib/task/queues.ts](file://src/lib/task/queues.ts)
 - [src/lib/task/types.ts](file://src/lib/task/types.ts)
 - [src/lib/config-service.ts](file://src/lib/config-service.ts)
 - [src/lib/workflow-concurrency.ts](file://src/lib/workflow-concurrency.ts)
 </cite>
+
+## 更新摘要
+**变更内容**
+- 更新了文本Worker部分，增加了对prop设计任务类型的支持
+- 扩展了handleAssetHubAIDesignTask函数，使其能够处理ASSET_HUB_AI_DESIGN_PROP任务类型
+- 更新了任务类型映射和路由逻辑，确保prop AI设计请求正确路由到worker队列系统
 
 ## 目录
 1. [简介](#简介)
@@ -56,6 +63,7 @@ end
 subgraph "处理器与工具"
 IHAND["handlers/image-task-handlers.ts"]
 CHAND["handlers/character-image-task-handler.ts"]
+AHAND["handlers/asset-hub-ai-design.ts"]
 UTILS["workers/utils.ts"]
 CFG["config-service.ts"]
 WF["workflow-concurrency.ts"]
@@ -73,6 +81,7 @@ VID --> CONCURRENCY
 IMG --> IHAND
 VID --> UTILS
 VOC --> UTILS
+TXT --> AHAND
 TXT --> UTILS
 IMG --> CFG
 VID --> CFG
@@ -92,28 +101,30 @@ QUEUES --> TYPES
 - [src/lib/workers/image.worker.ts:1-68](file://src/lib/workers/image.worker.ts#L1-L68)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
 - [src/lib/workers/voice.worker.ts:1-64](file://src/lib/workers/voice.worker.ts#L1-L64)
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
 - [src/lib/workers/handlers/image-task-handlers.ts:1-8](file://src/lib/workers/handlers/image-task-handlers.ts#L1-L8)
 - [src/lib/workers/handlers/character-image-task-handler.ts:1-196](file://src/lib/workers/handlers/character-image-task-handler.ts#L1-L196)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 - [src/lib/workers/utils.ts](file://src/lib/workers/utils.ts)
 - [src/lib/config-service.ts:1-346](file://src/lib/config-service.ts#L1-L346)
 - [src/lib/workflow-concurrency.ts:1-43](file://src/lib/workflow-concurrency.ts#L1-L43)
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
-- [src/lib/task/types.ts:1-159](file://src/lib/task/types.ts#L1-L159)
+- [src/lib/task/types.ts:1-160](file://src/lib/task/types.ts#L1-L160)
 
 **章节来源**
 - [src/lib/workers/index.ts:1-39](file://src/lib/workers/index.ts#L1-L39)
 - [src/lib/workers/image.worker.ts:1-68](file://src/lib/workers/image.worker.ts#L1-L68)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
 - [src/lib/workers/voice.worker.ts:1-64](file://src/lib/workers/voice.worker.ts#L1-L64)
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
 - [src/lib/workers/shared.ts:1-731](file://src/lib/workers/shared.ts#L1-L731)
 - [src/lib/workers/user-concurrency-gate.ts:1-70](file://src/lib/workers/user-concurrency-gate.ts#L1-L70)
 - [src/lib/workers/utils.ts](file://src/lib/workers/utils.ts)
 - [src/lib/workers/handlers/image-task-handlers.ts:1-8](file://src/lib/workers/handlers/image-task-handlers.ts#L1-L8)
 - [src/lib/workers/handlers/character-image-task-handler.ts:1-196](file://src/lib/workers/handlers/character-image-task-handler.ts#L1-L196)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
-- [src/lib/task/types.ts:1-159](file://src/lib/task/types.ts#L1-L159)
+- [src/lib/task/types.ts:1-160](file://src/lib/task/types.ts#L1-L160)
 - [src/lib/config-service.ts:1-346](file://src/lib/config-service.ts#L1-L346)
 - [src/lib/workflow-concurrency.ts:1-43](file://src/lib/workflow-concurrency.ts#L1-L43)
 
@@ -124,7 +135,7 @@ QUEUES --> TYPES
   - image.worker.ts：按任务类型分发至图像相关处理器，结合用户并发门控与任务生命周期。
   - video.worker.ts：视频面板生成与唇同步，含媒体下载签名、上传、模型能力解析与持久化。
   - voice.worker.ts：语音行生成与语音设计，支持不同任务类型。
-  - text.worker.ts：文本链路与多阶段AI推理，包含LLM流式回调、进度上报与事务性持久化。
+  - text.worker.ts：文本链路与多阶段AI推理，包含LLM流式回调、进度上报与事务性持久化，现支持角色、场景和道具的AI设计任务。
 - 并发与门控
   - user-concurrency-gate.ts：基于用户维度的并发门控，限定image与video作用域的并发上限。
   - workflow-concurrency.ts：默认并发值与规范化逻辑。
@@ -133,18 +144,18 @@ QUEUES --> TYPES
   - shared.ts：封装withTaskLifecycle、reportTaskProgress、reportTaskStreamChunk，统一任务状态流转、心跳、重试策略与事件发布。
 - 队列与任务类型
   - queues.ts：定义四个队列名称、默认作业选项（重试、退避）、任务类型到队列的映射与入队逻辑。
-  - types.ts：定义任务类型常量、事件类型、任务数据结构等。
+  - types.ts：定义任务类型常量、事件类型、任务数据结构等，包含ASSET_HUB_AI_DESIGN_PROP等新任务类型。
 
 **章节来源**
 - [src/lib/workers/index.ts:1-39](file://src/lib/workers/index.ts#L1-L39)
 - [src/lib/workers/image.worker.ts:1-68](file://src/lib/workers/image.worker.ts#L1-L68)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
 - [src/lib/workers/voice.worker.ts:1-64](file://src/lib/workers/voice.worker.ts#L1-L64)
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
 - [src/lib/workers/user-concurrency-gate.ts:1-70](file://src/lib/workers/user-concurrency-gate.ts#L1-L70)
 - [src/lib/workers/shared.ts:1-731](file://src/lib/workers/shared.ts#L1-L731)
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
-- [src/lib/task/types.ts:1-159](file://src/lib/task/types.ts#L1-L159)
+- [src/lib/task/types.ts:1-160](file://src/lib/task/types.ts#L1-L160)
 - [src/lib/config-service.ts:125-142](file://src/lib/config-service.ts#L125-L142)
 - [src/lib/workflow-concurrency.ts:1-43](file://src/lib/workflow-concurrency.ts#L1-L43)
 
@@ -185,6 +196,7 @@ WVoc->>WVoc : 语音行/语音设计处理
 Life-->>WVoc : 进度上报/完成/失败
 WTxt->>Life : withTaskLifecycle(job)
 WTxt->>WTxt : 文本链路/LLM流式处理
+WTxt->>WTxt : 处理资产库AI设计任务含道具
 Life-->>WTxt : 进度上报/完成/失败
 ```
 
@@ -193,7 +205,7 @@ Life-->>WTxt : 进度上报/完成/失败
 - [src/lib/workers/image.worker.ts:50-67](file://src/lib/workers/image.worker.ts#L50-L67)
 - [src/lib/workers/video.worker.ts:306-323](file://src/lib/workers/video.worker.ts#L306-L323)
 - [src/lib/workers/voice.worker.ts:54-63](file://src/lib/workers/voice.worker.ts#L54-L63)
-- [src/lib/workers/text.worker.ts:705-714](file://src/lib/workers/text.worker.ts#L705-L714)
+- [src/lib/workers/text.worker.ts:705-716](file://src/lib/workers/text.worker.ts#L705-L716)
 - [src/lib/workers/user-concurrency-gate.ts:56-69](file://src/lib/workers/user-concurrency-gate.ts#L56-L69)
 - [src/lib/workers/shared.ts:319-646](file://src/lib/workers/shared.ts#L319-L646)
 - [src/lib/task/queues.ts:88-101](file://src/lib/task/queues.ts#L88-L101)
@@ -296,14 +308,34 @@ W-->>W : 完成并上报进度
   - 使用QUEUE_NAME.TEXT，连接queueRedis，并发数来自QUEUE_CONCURRENCY_TEXT，默认10。
 - 任务类型与职责
   - 文本链路：故事转脚本、脚本转分镜、AI分析、扩写、剪辑构建、剧本文本转换、分集拆分、全局分析、资产库AI设计/修改、镜头AI、角色档案确认、参考转角色等。
+  - **新增**：现支持角色、场景和道具的AI设计任务，通过handleAssetHubAIDesignTask统一处理。
 - 特色能力
   - 内置LLM流式回调与分片上报，支持运行期事件直发与重放。
   - 事务性持久化，保障数据一致性。
 - 流程概览
   - withTaskLifecycle -> 分发到具体处理器 -> 上报进度/流式事件 -> 完成或失败。
 
+**更新** 扩展了handleAssetHubAIDesignTask函数，现在能够处理ASSET_HUB_AI_DESIGN_PROP任务类型，支持道具的AI设计功能。
+
 **章节来源**
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
+
+### 资产库AI设计处理器（handlers/asset-hub-ai-design.ts）
+- 功能概述
+  - 统一处理资产库AI设计任务，包括角色、场景和道具三种资产类型。
+  - 支持用户指令解析、模型配置获取、AI设计执行和结果上报。
+- 资产类型支持
+  - 角色设计：ASSET_HUB_AI_DESIGN_CHARACTER
+  - 场景设计：ASSET_HUB_AI_DESIGN_LOCATION  
+  - **新增**：道具设计：ASSET_HUB_AI_DESIGN_PROP
+- 处理流程
+  - 解析用户指令和模型配置
+  - 根据任务类型确定资产类型
+  - 调用aiDesign函数执行AI设计
+  - 上报进度并返回设计结果
+
+**章节来源**
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 
 ### 并发门控与资源限制（user-concurrency-gate.ts）
 - 作用域
@@ -351,12 +383,13 @@ Cleanup --> |否| Exit
   - IMAGE/VIDEO/VOICE/TEXT四个队列，统一默认作业选项：移除完成/失败作业数量、重试次数、指数退避延迟。
 - 任务类型到队列映射
   - 通过getQueueTypeByTaskType与getQueueByType实现任务类型到队列的路由。
+  - **更新**：ASSET_HUB_AI_DESIGN_PROP等文本任务类型映射到TEXT队列。
 - 入队与取消
   - addTaskJob根据任务类型选择队列并设置优先级与尝试次数；removeTaskJob遍历所有队列查找并移除。
 
 **章节来源**
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
-- [src/lib/task/types.ts:1-159](file://src/lib/task/types.ts#L1-L159)
+- [src/lib/task/types.ts:1-160](file://src/lib/task/types.ts#L1-L160)
 
 ## 依赖关系分析
 - Worker与队列
@@ -369,6 +402,7 @@ Cleanup --> |否| Exit
   - config-service提供用户偏好并发配置，workflow-concurrency提供默认值与规范化。
 - Worker与处理器
   - 图像Worker依赖handlers目录下的具体处理器；视频/语音/文本Worker各自维护内部处理逻辑。
+  - **新增**：文本Worker依赖asset-hub-ai-design处理器处理道具设计任务。
 
 ```mermaid
 graph LR
@@ -391,32 +425,35 @@ ImgW --> Handlers["handlers/*"]
 VidW --> Utils["workers/utils.ts"]
 VocW --> Utils
 TxtW --> Utils
+TxtW --> AHAND["handlers/asset-hub-ai-design.ts"]
 ```
 
 **图表来源**
-- [src/lib/task/types.ts:1-159](file://src/lib/task/types.ts#L1-L159)
+- [src/lib/task/types.ts:1-160](file://src/lib/task/types.ts#L1-L160)
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
 - [src/lib/workers/image.worker.ts:1-68](file://src/lib/workers/image.worker.ts#L1-L68)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
 - [src/lib/workers/voice.worker.ts:1-64](file://src/lib/workers/voice.worker.ts#L1-L64)
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
 - [src/lib/workers/shared.ts:1-731](file://src/lib/workers/shared.ts#L1-L731)
 - [src/lib/workers/user-concurrency-gate.ts:1-70](file://src/lib/workers/user-concurrency-gate.ts#L1-L70)
 - [src/lib/config-service.ts:1-346](file://src/lib/config-service.ts#L1-L346)
 - [src/lib/workers/handlers/image-task-handlers.ts:1-8](file://src/lib/workers/handlers/image-task-handlers.ts#L1-L8)
 - [src/lib/workers/utils.ts](file://src/lib/workers/utils.ts)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 
 **章节来源**
 - [src/lib/task/queues.ts:1-112](file://src/lib/task/queues.ts#L1-L112)
 - [src/lib/workers/image.worker.ts:1-68](file://src/lib/workers/image.worker.ts#L1-L68)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
 - [src/lib/workers/voice.worker.ts:1-64](file://src/lib/workers/voice.worker.ts#L1-L64)
-- [src/lib/workers/text.worker.ts:1-715](file://src/lib/workers/text.worker.ts#L1-L715)
+- [src/lib/workers/text.worker.ts:1-716](file://src/lib/workers/text.worker.ts#L1-L716)
 - [src/lib/workers/shared.ts:1-731](file://src/lib/workers/shared.ts#L1-L731)
 - [src/lib/workers/user-concurrency-gate.ts:1-70](file://src/lib/workers/user-concurrency-gate.ts#L1-L70)
 - [src/lib/config-service.ts:1-346](file://src/lib/config-service.ts#L1-L346)
 - [src/lib/workers/handlers/image-task-handlers.ts:1-8](file://src/lib/workers/handlers/image-task-handlers.ts#L1-L8)
 - [src/lib/workers/utils.ts](file://src/lib/workers/utils.ts)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 
 ## 性能考量
 - 并发与限流
@@ -428,8 +465,6 @@ TxtW --> Utils
   - 视频/语音/图像生成涉及网络I/O与对象存储上传，建议合理设置超时与重试。
 - 日志与监控
   - 生命周期内定时心跳与事件发布便于追踪与告警。
-
-[本节为通用指导，无需特定文件来源]
 
 ## 故障排查指南
 - Worker未启动或异常退出
@@ -444,6 +479,9 @@ TxtW --> Utils
 - 视频/语音生成失败
   - 检查video.worker.ts中的媒体签名、下载头与上传流程。
   - 确认模型能力解析与生成选项是否匹配。
+- **新增**：道具AI设计任务失败
+  - 检查asset-hub-ai-design处理器中的任务类型判断逻辑。
+  - 确认ASSET_HUB_AI_DESIGN_PROP任务类型是否正确路由到TEXT队列。
 
 **章节来源**
 - [src/lib/workers/index.ts:1-39](file://src/lib/workers/index.ts#L1-L39)
@@ -451,11 +489,10 @@ TxtW --> Utils
 - [src/lib/workers/user-concurrency-gate.ts:1-70](file://src/lib/workers/user-concurrency-gate.ts#L1-L70)
 - [src/lib/config-service.ts:125-142](file://src/lib/config-service.ts#L125-L142)
 - [src/lib/workers/video.worker.ts:1-324](file://src/lib/workers/video.worker.ts#L1-L324)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:1-75](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L1-L75)
 
 ## 结论
-Waoowaoo的Worker管理模块以BullMQ为核心，通过明确的队列与任务类型映射、统一的任务生命周期管理、用户级并发门控与可配置的重试策略，实现了高可靠、可扩展的任务执行体系。图像、视频、语音、文本四类Worker各司其职，配合共享工具与处理器，覆盖从生成到持久化的完整链路。通过合理的并发与限流策略，系统能够在保证用户体验的同时，有效防止资源滥用。
-
-[本节为总结，无需特定文件来源]
+Waoowaoo的Worker管理模块以BullMQ为核心，通过明确的队列与任务类型映射、统一的任务生命周期管理、用户级并发门控与可配置的重试策略，实现了高可靠、可扩展的任务执行体系。图像、视频、语音、文本四类Worker各司其职，配合共享工具与处理器，覆盖从生成到持久化的完整链路。**最新更新**增加了对道具AI设计任务的支持，通过扩展handleAssetHubAIDesignTask函数，使prop设计请求能够正确路由到worker队列系统。通过合理的并发与限流策略，系统能够在保证用户体验的同时，有效防止资源滥用。
 
 ## 附录
 
@@ -486,7 +523,7 @@ Waoowaoo的Worker管理模块以BullMQ为核心，通过明确的队列与任务
 - [src/lib/workers/image.worker.ts:62-66](file://src/lib/workers/image.worker.ts#L62-L66)
 - [src/lib/workers/video.worker.ts:318-322](file://src/lib/workers/video.worker.ts#L318-L322)
 - [src/lib/workers/voice.worker.ts:58-61](file://src/lib/workers/voice.worker.ts#L58-L61)
-- [src/lib/workers/text.worker.ts:710-712](file://src/lib/workers/text.worker.ts#L710-L712)
+- [src/lib/workers/text.worker.ts:710-716](file://src/lib/workers/text.worker.ts#L710-L716)
 - [src/lib/task/queues.ts:12-20](file://src/lib/task/queues.ts#L12-L20)
 - [src/lib/config-service.ts:125-142](file://src/lib/config-service.ts#L125-L142)
 - [src/lib/workflow-concurrency.ts:1-43](file://src/lib/workflow-concurrency.ts#L1-L43)
@@ -499,16 +536,22 @@ Waoowaoo的Worker管理模块以BullMQ为核心，通过明确的队列与任务
   - 在workers/index.ts中导出并注册该Worker。
   - 在shared.ts中完善必要的生命周期与事件发布逻辑。
   - 如需用户并发门控，参考image.worker.ts与user-concurrency-gate.ts进行集成。
+- **更新**：处理道具设计任务的步骤
+  - 在text.worker.ts的processTextTask函数中添加ASSET_HUB_AI_DESIGN_PROP分支。
+  - 确保queues.ts中的任务类型映射到TEXT队列。
+  - 在asset-hub-ai-design处理器中正确识别prop资产类型。
 - 示例路径
-  - 新任务类型定义：[src/lib/task/types.ts:40-81](file://src/lib/task/types.ts#L40-L81)
-  - 队列映射与入队：[src/lib/task/queues.ts:67-101](file://src/lib/task/queues.ts#L67-L101)
+  - 新任务类型定义：[src/lib/task/types.ts:75-82](file://src/lib/task/types.ts#L75-L82)
+  - 队列映射与入队：[src/lib/task/queues.ts:67-72](file://src/lib/task/queues.ts#L67-L72)
   - Worker模板与并发：[src/lib/workers/image.worker.ts:50-67](file://src/lib/workers/image.worker.ts#L50-L67)
   - 生命周期与事件：[src/lib/workers/shared.ts:319-646](file://src/lib/workers/shared.ts#L319-L646)
   - 并发门控集成：[src/lib/workers/user-concurrency-gate.ts:56-69](file://src/lib/workers/user-concurrency-gate.ts#L56-L69)
+  - **新增**：道具设计处理器：[src/lib/workers/handlers/asset-hub-ai-design.ts:20-32](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L20-L32)
 
 **章节来源**
-- [src/lib/task/types.ts:40-81](file://src/lib/task/types.ts#L40-L81)
-- [src/lib/task/queues.ts:67-101](file://src/lib/task/queues.ts#L67-L101)
+- [src/lib/task/types.ts:75-82](file://src/lib/task/types.ts#L75-L82)
+- [src/lib/task/queues.ts:67-72](file://src/lib/task/queues.ts#L67-L72)
 - [src/lib/workers/image.worker.ts:50-67](file://src/lib/workers/image.worker.ts#L50-L67)
 - [src/lib/workers/shared.ts:319-646](file://src/lib/workers/shared.ts#L319-L646)
 - [src/lib/workers/user-concurrency-gate.ts:56-69](file://src/lib/workers/user-concurrency-gate.ts#L56-L69)
+- [src/lib/workers/handlers/asset-hub-ai-design.ts:20-32](file://src/lib/workers/handlers/asset-hub-ai-design.ts#L20-L32)

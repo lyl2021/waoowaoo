@@ -18,6 +18,7 @@ import {
     generateVideoViaOpenAICompat,
     generateVideoViaOpenAICompatTemplate,
     resolveModelGatewayRoute,
+    resolveSizeFromResolutionAndAspectRatio,
 } from './model-gateway'
 import { generateBailianAudio, generateBailianImage, generateBailianVideo } from './providers/bailian'
 import { generateSiliconFlowAudio, generateSiliconFlowImage, generateSiliconFlowVideo } from './providers/siliconflow'
@@ -119,11 +120,45 @@ export async function generateImage(
     // 调用生成（提取 referenceImages 单独传递，其余选项合并进 options）
     const { referenceImages, ...generatorOptions } = options || {}
     if (gatewayRoute === 'openai-compat') {
+        // aspectRatio → 最优像素尺寸（用户要求最高质量，按 Pixel budget ≤ 8,294,400）
+        // 优先使用能力系统注入的 resolution token，未注入时默认 4K
+        const rawAspectRatio = generatorOptions.aspectRatio
+        if (rawAspectRatio && !generatorOptions.size) {
+            const resolutionToken = generatorOptions.resolution || '4K'
+            const optimalSize = resolveSizeFromResolutionAndAspectRatio(
+                resolutionToken,
+                rawAspectRatio,
+            )
+            if (optimalSize) {
+                generatorOptions.size = optimalSize
+            }
+        }
+
         const compatTemplate = selection.compatMediaTemplate
         if (providerKey === 'openai-compatible' && !compatTemplate) {
             throw new Error(`MODEL_COMPAT_MEDIA_TEMPLATE_REQUIRED: ${selection.modelKey}`)
         }
         if (compatTemplate) {
+            // 当 size 已设置时，确保模板 body 中包含 size 字段以传递给 API
+            const templateBody = compatTemplate.create.bodyTemplate
+            const needsSizePatch = generatorOptions.size
+                && templateBody
+                && typeof templateBody === 'object'
+                && !Array.isArray(templateBody)
+
+            const activeTemplate = needsSizePatch
+                ? {
+                    ...compatTemplate,
+                    create: {
+                        ...compatTemplate.create,
+                        bodyTemplate: {
+                            ...(templateBody as Record<string, unknown>),
+                            size: '{{size}}',
+                        },
+                    },
+                }
+                : compatTemplate
+
             return await generateImageViaOpenAICompatTemplate({
                 userId,
                 providerId: selection.provider,
@@ -138,20 +173,23 @@ export async function generateImage(
                     modelKey: selection.modelKey,
                 },
                 profile: 'openai-compatible',
-                template: compatTemplate,
+                template: activeTemplate,
             })
         }
 
-        // OpenAI 兼容模式：将 aspectRatio 转换为 size
+        // OpenAI 兼容模式：将 aspectRatio 转换为 size（resolution 已被上游解析，此路径仅作 fallback）
         let openaiCompatOptions = { ...generatorOptions }
         if (openaiCompatOptions.aspectRatio) {
-            const mappedSize = aspectRatioToOpenAISize(openaiCompatOptions.aspectRatio)
-            if (mappedSize && !openaiCompatOptions.size) {
-                openaiCompatOptions = { ...openaiCompatOptions, size: mappedSize }
+            if (!openaiCompatOptions.size) {
+                const mappedSize = aspectRatioToOpenAISize(openaiCompatOptions.aspectRatio)
+                if (mappedSize) {
+                    openaiCompatOptions = { ...openaiCompatOptions, size: mappedSize }
+                }
             }
-            // 移除不支持的 aspectRatio
             delete openaiCompatOptions.aspectRatio
         }
+        // resolution 已被 size 替代，清理避免冲突
+        delete openaiCompatOptions.resolution
 
         return await generateImageViaOpenAICompat({
             userId,

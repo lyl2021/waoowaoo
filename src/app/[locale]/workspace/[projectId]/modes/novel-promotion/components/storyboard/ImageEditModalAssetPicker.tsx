@@ -82,7 +82,7 @@ export default function ImageEditModalAssetPicker({
                             })
                           }
                         }}
-                        className={`relative aspect-square rounded-lg overflow-hidden border-2 ${isSelected ? 'border-[var(--glass-stroke-focus)]' : 'border-transparent'}`}
+                        className={`relative aspect-[3/2] rounded-lg overflow-hidden border-2 ${isSelected ? 'border-[var(--glass-stroke-focus)]' : 'border-transparent'}`}
                       >
                         {displayImageUrl ? (
                           <MediaImageWithLoading
@@ -147,7 +147,7 @@ export default function ImageEditModalAssetPicker({
                           })
                         }
                       }}
-                      className={`relative aspect-[3/2] rounded-lg overflow-hidden border-2 ${isSelected ? 'border-[var(--glass-stroke-focus)]' : 'border-transparent'}`}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 ${isSelected ? 'border-[var(--glass-stroke-focus)]' : 'border-transparent'}`}
                     >
                       {displayImageUrl ? (
                         <MediaImageWithLoading

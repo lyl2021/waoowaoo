@@ -25,7 +25,7 @@
 **所做更改**   
 - 更新 ImagePreviewModal 组件的响应式布局实现细节，反映从固定屏幕尺寸到内容自适应的改进
 - 增强按钮定位系统的文档说明，详细解释绝对定位和z-index管理策略
-- 优化最大宽度和高度设置的技术说明，解释94vw和90vh比例的选择原理
+- 优化最大宽度和高度设置的技术说明，解释92vw和88vh比例的选择原理
 - 补充图片容器的响应式设计优化说明
 
 ## 目录
@@ -67,7 +67,7 @@ L --> O["image-url 工具"]
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
-- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
+- [src/components/ui/ImagePreviewModal.tsx:1-80](file://src/components/ui/ImagePreviewModal.tsx#L1-L80)
 - [src/components/media/MediaImageWithLoading.tsx:1-92](file://src/components/media/MediaImageWithLoading.tsx#L1-L92)
 - [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
 - [src/lib/media/image-url.ts:1-90](file://src/lib/media/image-url.ts#L1-L90)
@@ -95,7 +95,7 @@ L --> O["image-url 工具"]
 - [src/components/ui/primitives/GlassButton.tsx:1-67](file://src/components/ui/primitives/GlassButton.tsx#L1-L67)
 - [src/components/ui/primitives/GlassChip.tsx:1-43](file://src/components/ui/primitives/GlassChip.tsx#L1-L43)
 - [src/components/ui/primitives/GlassModalShell.tsx:1-102](file://src/components/ui/primitives/GlassModalShell.tsx#L1-L102)
-- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
+- [src/components/ui/ImagePreviewModal.tsx:1-80](file://src/components/ui/ImagePreviewModal.tsx#L1-L80)
 
 ## 架构总览
 Glass UI 设计系统采用"令牌层 + 语义层 + 组件层"的分层架构：
@@ -117,7 +117,7 @@ IM --> U
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
-- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
+- [src/components/ui/ImagePreviewModal.tsx:1-80](file://src/components/ui/ImagePreviewModal.tsx#L1-L80)
 
 ## 组件详解
 
@@ -314,9 +314,9 @@ end
   - 使用 MediaImageWithLoading 组件提供加载状态
   - 应用统一的玻璃拟态视觉风格
 - **更新** 响应式设计优化
-  - 图片容器使用 `max-w-[94vw] max-h-[90vh]` 实现内容自适应
+  - 图片容器使用 `max-w-[92vw] max-h-[88vh] w-auto h-auto` 实现内容自适应
   - 绝对定位的按钮系统通过 z-index 管理层级关系
-  - 94vw 和 90vh 的比例确保在各种屏幕尺寸下的最佳显示效果
+  - 92vw 和 88vh 的比例确保在各种屏幕尺寸下的最佳显示效果
   - 支持 object-contain 缩放模式保持图片纵横比
 - 交互要点：点击遮罩区域或关闭按钮关闭；支持键盘事件监听；自动清理事件监听器。
 
@@ -338,11 +338,11 @@ IPM->>IPM : 移除事件监听器
 ```
 
 **图表来源**
-- [src/components/ui/ImagePreviewModal.tsx:14-84](file://src/components/ui/ImagePreviewModal.tsx#L14-L84)
+- [src/components/ui/ImagePreviewModal.tsx:14-79](file://src/components/ui/ImagePreviewModal.tsx#L14-L79)
 - [src/components/media/MediaImageWithLoading.tsx:18-91](file://src/components/media/MediaImageWithLoading.tsx#L18-L91)
 
 **章节来源**
-- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
+- [src/components/ui/ImagePreviewModal.tsx:1-80](file://src/components/ui/ImagePreviewModal.tsx#L1-L80)
 
 ## 依赖关系分析
 - 组件导出索引：primitives/index.ts 统一导出各组件类型与默认实现，便于按需引入与测试。
@@ -383,7 +383,7 @@ IM -.-> IMG["图片处理链路"]
 - 加载态：GlassButton 的 loading 通过任务状态解析生成，避免重复逻辑，减少分支判断。
 - **新增**：ImagePreviewModal 使用 useEffect 清理机制，确保事件监听器正确移除，防止内存泄漏。
 - **新增**：MediaImageWithLoading 组件提供骨架屏与加载指示器，改善大图加载体验。
-- **更新**：响应式布局优化减少了不必要的重绘，94vw 和 90vh 的比例在保证显示效果的同时降低了计算开销。
+- **更新**：响应式布局优化减少了不必要的重绘，92vw 和 88vh 的比例在保证显示效果的同时降低了计算开销。
 
 **章节来源**
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
@@ -409,7 +409,7 @@ IM -.-> IMG["图片处理链路"]
   - 检查 useEffect 清理函数是否执行；确认事件监听器是否正确移除。
   - 参考路径：[滚动控制逻辑:17-33](file://src/components/ui/ImagePreviewModal.tsx#L17-L33)
 - **新增**：图片显示超出屏幕范围
-  - 检查 max-w-[94vw] 和 max-h-[90vh] 样式是否正确应用。
+  - 检查 max-w-[92vw] 和 max-h-[88vh] 样式是否正确应用。
   - 验证 object-contain 缩放模式是否生效。
   - 确认图片容器的 flex 布局设置。
 - **新增**：按钮定位异常或层级问题
@@ -437,12 +437,12 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - 组件层：通过类名组合与密度变量实现紧凑/默认两种密度，适配移动端与桌面端。
 - 样式层：语义层提供密度类名，容器组件根据密度动态选择类名。
 - 全局层：媒体查询与断点配合语义类名，实现自适应布局。
-- **更新**：ImagePreviewModal 采用内容自适应设计，使用 `max-w-[94vw] max-h-[90vh]` 确保在各种屏幕尺寸下的最佳显示效果。这种基于视口单位的布局方案相比固定像素尺寸更加灵活，能够自动适配不同设备的屏幕大小。
+- **更新**：ImagePreviewModal 采用内容自适应设计，使用 `max-w-[92vw] max-h-[88vh] w-auto h-auto` 确保在各种屏幕尺寸下的最佳显示效果。这种基于视口单位的布局方案相比固定像素尺寸更加灵活，能够自动适配不同设备的屏幕大小。
 
 **章节来源**
 - [src/styles/ui-semantic-glass.css:265-271](file://src/styles/ui-semantic-glass.css#L265-L271)
 - [src/components/ui/primitives/GlassSurface.tsx:31](file://src/components/ui/primitives/GlassSurface.tsx#L31)
-- [src/components/ui/ImagePreviewModal.tsx:46](file://src/components/ui/ImagePreviewModal.tsx#L46)
+- [src/components/ui/ImagePreviewModal.tsx:72-73]
 
 ### 主题定制与样式覆盖
 - 令牌层定制：修改 ui-tokens-glass.css 中变量即可调整整体风格（颜色、阴影、圆角、模糊等）。
@@ -470,7 +470,7 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassSurface.tsx:18-46](file://src/components/ui/primitives/GlassSurface.tsx#L18-L46)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
-- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
+- [src/components/ui/ImagePreviewModal.tsx:1-80](file://src/components/ui/ImagePreviewModal.tsx#L1-L80)
 
 ### 实际使用示例与最佳实践
 - 示例场景
@@ -491,7 +491,7 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassButton.tsx:17-64](file://src/components/ui/primitives/GlassButton.tsx#L17-L64)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
-- [src/components/ui/ImagePreviewModal.tsx:14-84](file://src/components/ui/ImagePreviewModal.tsx#L14-L84)
+- [src/components/ui/ImagePreviewModal.tsx:14-79](file://src/components/ui/ImagePreviewModal.tsx#L14-L79)
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
 
 ### 图片预览功能的视觉设计优化
@@ -500,10 +500,10 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - **新增**：按钮采用圆角设计与过渡动画，提供流畅的交互体验。
 - **新增**：图片容器应用 rounded-2xl 圆角，shadow-2xl 阴影，营造立体视觉效果。
 - **新增**：支持查看原始图片功能，通过链接按钮提供直接访问选项。
-- **更新**：响应式布局优化采用 `max-w-[94vw] max-h-[90vh]` 实现内容自适应，94vw 和 90vh 的比例确保在各种屏幕尺寸下都有最佳显示效果。
+- **更新**：响应式布局优化采用 `max-w-[92vw] max-h-[88vh] w-auto h-auto` 实现内容自适应，92vw 和 88vh 的比例确保在各种屏幕尺寸下都有最佳显示效果。
 - **更新**：按钮定位系统通过绝对定位和 z-index 管理，确保关闭按钮和查看原始图片按钮不会被图片内容遮挡。
 
 **章节来源**
-- [src/components/ui/ImagePreviewModal.tsx:40-84](file://src/components/ui/ImagePreviewModal.tsx#L40-L84)
+- [src/components/ui/ImagePreviewModal.tsx:40-79](file://src/components/ui/ImagePreviewModal.tsx#L40-L79)
 - [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
 - [src/lib/media/image-url.ts:51-89](file://src/lib/media/image-url.ts#L51-L89)

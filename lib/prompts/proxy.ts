@@ -1,8 +1,12 @@
 
 export async function setProxy() {
-    if (process.env.PROXY_URL) {  // If you are in China, you must use this proxy:
+    const proxyUrl = process.env.PROXY_URL
+      || process.env.https_proxy
+      || process.env.HTTP_PROXY
+      || process.env.http_proxy
+    if (proxyUrl) {
       const { setGlobalDispatcher, ProxyAgent } = await import("undici");
-      const proxyAgent = new ProxyAgent(process.env.PROXY_URL);
+      const proxyAgent = new ProxyAgent(proxyUrl);
       setGlobalDispatcher(proxyAgent);
     }
   }

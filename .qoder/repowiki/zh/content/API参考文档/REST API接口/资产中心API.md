@@ -1,7 +1,7 @@
 # 资产中心API
 
 <cite>
-**本文引用的文件**
+**本文档引用的文件**
 - [src/app/api/asset-hub/ai-design-character/route.ts](file://src/app/api/asset-hub/ai-design-character/route.ts)
 - [src/app/api/asset-hub/ai-design-location/route.ts](file://src/app/api/asset-hub/ai-design-location/route.ts)
 - [src/app/api/asset-hub/ai-design-prop/route.ts](file://src/app/api/asset-hub/ai-design-prop/route.ts)
@@ -23,7 +23,7 @@
 
 ## 更新摘要
 **变更内容**
-- 新增AI设计道具端点(ai-design-prop)，完善AI设计功能覆盖角色、场景和道具
+- 新增AI设计道具端点(ai-design-prop)，完善AI设计功能覆盖角色、场景和道具三个维度
 - 新增图像描述端点(describe-images)，支持视觉模型分析图片并返回文字描述
 - 新增导入端点(import)，提供批量资产导入和冲突检测功能
 - 更新项目结构图表，反映新增的三个端点
@@ -316,7 +316,7 @@ ErrCfg --> Done
   - POST /api/asset-hub/describe-images
 - 请求体
   - imageUrls: string[]（必填，至少一个）
-  - type: 'prop' | 'location' | 'character'（可选，默认为prop）
+  - type: 'prop' | 'location'（可选，默认为prop）
 - 成功响应
   - JSON：{ description: string }
 - 错误码

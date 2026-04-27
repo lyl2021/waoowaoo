@@ -73,7 +73,7 @@ function NovelPromotionWorkspaceContent(props: NovelPromotionWorkspaceProps) {
   }
 
   return (
-    <div>
+    <div className="flex flex-col min-h-0 flex-1">
       <AnimatedBackground />
 
       <WorkspaceHeaderShell
@@ -110,13 +110,11 @@ function NovelPromotionWorkspaceContent(props: NovelPromotionWorkspaceProps) {
         episodeId={episodeId}
         onOpenAssetLibrary={() => vm.ui.openAssetLibrary()}
         onOpenSettingsModal={() => vm.ui.setIsSettingsModalOpen(true)}
-        onRefresh={() => vm.ui.onRefresh({ mode: 'full' })}
         assetLibraryLabel={vm.i18n.t('buttons.assetLibrary')}
         settingsLabel={vm.i18n.t('buttons.settings')}
-        refreshTitle={vm.i18n.t('buttons.refreshData')}
       />
 
-      <div className="pt-24">
+      <div className="flex-1 overflow-y-auto flex flex-col px-4 sm:px-6 lg:px-10 py-8">
         <WorkspaceStageRuntimeProvider value={vm.runtime.stageRuntime}>
           <WorkspaceStageContent currentStage={vm.stageNav.currentStage} />
         </WorkspaceStageRuntimeProvider>

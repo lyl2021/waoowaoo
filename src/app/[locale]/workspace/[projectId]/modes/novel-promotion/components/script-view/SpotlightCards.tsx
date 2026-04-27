@@ -101,7 +101,7 @@ export function SpotlightCharCard({
           <AppIcon name="closeSm" className="h-3 w-3" />
         </button>
       )}
-      <div className="aspect-square relative rounded-t-xl overflow-hidden bg-[var(--glass-bg-muted)]">
+      <div className="aspect-[3/2] relative rounded-t-xl overflow-hidden bg-[var(--glass-bg-muted)]">
         {imageUrl ? (
           <MediaImageWithLoading
             src={imageUrl}
@@ -230,7 +230,7 @@ export function SpotlightLocationCard({
           <AppIcon name="closeSm" className="h-3 w-3" />
         </button>
       )}
-      <div className="aspect-video relative rounded-t-xl overflow-hidden bg-[var(--glass-bg-muted)]">
+      <div className="aspect-square relative rounded-t-xl overflow-hidden bg-[var(--glass-bg-muted)]">
         {imageUrl ? (
           <MediaImageWithLoading
             src={imageUrl}

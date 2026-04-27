@@ -132,7 +132,7 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
     requestedCount: generatedImageCount > 1 ? generatedImageCount : generationCount,
   })
   const displaySlotCount = displaySelectionImages.length
-  const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-[3/2]' : 'aspect-square'
+  const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-square' : 'aspect-square'
   const displayTaskPresentation = isTaskRunning
     ? resolveTaskPresentationState({
       phase: 'processing',

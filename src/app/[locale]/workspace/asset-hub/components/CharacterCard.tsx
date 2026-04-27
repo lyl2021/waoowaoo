@@ -466,7 +466,7 @@ export function CharacterCard({ character, assetType = 'character', folderMap, o
             <input ref={voiceInputRef} type="file" accept="audio/*" onChange={handleUploadVoice} className="hidden" />
 
             {/* 图片区域 */}
-            <div className="relative aspect-square bg-[var(--glass-bg-muted)]">
+            <div className="relative aspect-[3/2] bg-[var(--glass-bg-muted)]">
                 {displayImageUrl ? (
                     <>
                         <MediaImageWithLoading

@@ -388,8 +388,8 @@ export default function ProjectDetailPage() {
       {/* V3 UI: 浮动导航替代了旧的 Sidebar */}
 
       {/* 主内容区 - 占满全部宽度 */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-6 lg:px-10 py-8">
+      <main className="flex-1 flex flex-col min-h-0">
+        <div className="px-4 sm:px-6 lg:px-10 flex-1 flex flex-col min-h-0">
           {isGlobalAssetsView && project.novelPromotionData ? (
             // 全局资产视图（确保数据准备好）
             <div>

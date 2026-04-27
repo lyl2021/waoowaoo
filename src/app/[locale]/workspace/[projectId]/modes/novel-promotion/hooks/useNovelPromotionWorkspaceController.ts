@@ -147,6 +147,7 @@ export function useNovelPromotionWorkspaceController({
   const capsuleNavItems = useWorkspaceStageNavigation({
     isAnyOperationRunning,
     stageArtifacts,
+    episode,
     t,
   })
 

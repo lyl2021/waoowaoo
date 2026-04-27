@@ -1,4 +1,4 @@
-export { generateImageViaOpenAICompat } from './image'
+export { generateImageViaOpenAICompat, resolveSizeFromResolutionAndAspectRatio } from './image'
 export { generateVideoViaOpenAICompat } from './video'
 export { generateImageViaOpenAICompatTemplate } from './template-image'
 export { generateVideoViaOpenAICompatTemplate } from './template-video'

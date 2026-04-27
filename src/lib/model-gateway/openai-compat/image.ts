@@ -24,6 +24,7 @@ type OpenAIImageGenerateSize =
   | '2048x1152'    // 2K 16:9
   | '3840x2160'    // 4K 16:9
   | '2160x3840'    // 4K 9:16
+  | '2880x2880'    // 4K 1:1
 
 const OPENAI_IMAGE_OPTION_KEYS = new Set([
   'provider',
@@ -90,6 +91,7 @@ function normalizeOpenAIImageSize(value: string | undefined): OpenAIImageGenerat
     || value === '2048x1152'
     || value === '3840x2160'
     || value === '2160x3840'
+    || value === '2880x2880'
   ) {
     return value
   }
@@ -125,7 +127,7 @@ const RESOLUTION_SIZE_MAP: Record<string, Record<string, string>> = {
     '9:16': '1152x2048',
   },
   '4K': {
-    '1:1': '2816x2816',
+    '1:1': '2880x2880',
     '3:2': '3520x2336',
     '2:3': '2336x3520',
     '16:9': '3840x2160',
@@ -133,7 +135,7 @@ const RESOLUTION_SIZE_MAP: Record<string, Record<string, string>> = {
   },
 }
 
-function resolveSizeFromResolutionAndAspectRatio(
+export function resolveSizeFromResolutionAndAspectRatio(
   resolution: string,
   aspectRatio?: string,
 ): string | undefined {

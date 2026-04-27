@@ -208,7 +208,7 @@ export default function LocationCard({
   const hasPreviousVersion = location.images?.some(img => img.previousImageUrl) || false
 
   const showSelectionMode = displaySlotCount > 1
-  const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-[3/2]' : 'aspect-square'
+  const singleImageAspectClassName = generatedImageCount > 1 ? 'aspect-square' : 'aspect-square'
 
   // 选择模式：显示名字在上，三张图片在下
   if (showSelectionMode) {

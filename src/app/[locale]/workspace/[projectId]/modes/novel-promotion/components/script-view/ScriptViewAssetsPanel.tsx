@@ -533,7 +533,7 @@ export default function ScriptViewAssetsPanel({
                                 }}
                                 className={`relative w-full rounded-lg overflow-hidden border-2 ${isThisAppearanceSelected ? 'border-[var(--glass-stroke-success)]' : 'border-transparent hover:border-[var(--glass-stroke-focus)]'}`}
                               >
-                                <div className="aspect-square bg-[var(--glass-bg-muted)]">
+                                <div className="aspect-[3/2] bg-[var(--glass-bg-muted)]">
                                   {previewUrl ? (
                                     <MediaImageWithLoading
                                       src={previewUrl}
@@ -681,7 +681,7 @@ export default function ScriptViewAssetsPanel({
                           }}
                           className={`relative w-full overflow-hidden rounded-lg border-2 text-left transition-colors ${isSelected ? 'border-[var(--glass-stroke-success)]' : 'border-transparent hover:border-[var(--glass-stroke-focus)]'}`}
                         >
-                          <div className="aspect-video bg-[var(--glass-bg-muted)]">
+                          <div className="aspect-square bg-[var(--glass-bg-muted)]">
                             {previewImage ? (
                               <MediaImageWithLoading
                                 src={previewImage}
@@ -796,7 +796,7 @@ export default function ScriptViewAssetsPanel({
                         }}
                         className={`relative w-full overflow-hidden rounded-lg border-2 text-left transition-colors ${isSelected ? 'border-[var(--glass-stroke-success)]' : 'border-transparent hover:border-[var(--glass-stroke-focus)]'}`}
                       >
-                        <div className="aspect-video bg-[var(--glass-bg-muted)]">
+                        <div className="aspect-[3/2] bg-[var(--glass-bg-muted)]">
                           {previewImage ? (
                             <MediaImageWithLoading
                               src={previewImage}

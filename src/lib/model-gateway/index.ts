@@ -17,4 +17,5 @@ export {
   runOpenAICompatChatCompletion,
   runOpenAICompatChatCompletionStream,
   runOpenAICompatResponsesCompletion,
+  resolveSizeFromResolutionAndAspectRatio,
 } from './openai-compat'

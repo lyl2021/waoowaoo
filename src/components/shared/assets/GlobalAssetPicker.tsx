@@ -383,7 +383,7 @@ export default function GlobalAssetPicker({
                                             )}
 
                                             {/* 预览图 */}
-                                            <div className="aspect-video rounded-lg overflow-hidden bg-[var(--glass-bg-muted)] mb-2 relative">
+                                            <div className="aspect-square rounded-lg overflow-hidden bg-[var(--glass-bg-muted)] mb-2 relative">
                                                 {locPreview ? (
                                                     <MediaImageWithLoading
                                                         src={locPreview}
@@ -427,7 +427,7 @@ export default function GlobalAssetPicker({
                                             {selectedId === prop.id && (
                                                 <CheckCircleIcon className="absolute -top-2 -right-2 w-6 h-6 text-[var(--glass-tone-info-fg)] bg-[var(--glass-bg-surface)] rounded-full" />
                                             )}
-                                            <div className="aspect-video rounded-lg overflow-hidden bg-[var(--glass-bg-muted)] mb-2 relative">
+                                            <div className="aspect-[3/2] rounded-lg overflow-hidden bg-[var(--glass-bg-muted)] mb-2 relative">
                                                 {propPreview ? (
                                                     <MediaImageWithLoading
                                                         src={propPreview}
