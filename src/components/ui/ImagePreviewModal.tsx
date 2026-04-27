@@ -70,7 +70,7 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
           width={4096}
           height={4096}
           containerClassName="flex items-center justify-center rounded-2xl !bg-transparent"
-          className="w-screen max-h-[96vh] object-contain shadow-2xl"
+          className="max-w-[92vw] max-h-[88vh] w-auto h-auto object-contain shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         />
       </div>
