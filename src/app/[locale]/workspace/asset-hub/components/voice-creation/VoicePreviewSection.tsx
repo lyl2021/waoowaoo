@@ -66,6 +66,7 @@ export default function VoicePreviewSection({ runtime }: VoicePreviewSectionProp
           onGenerate={() => {
             void handleGenerate()
           }}
+          hideStyleSection
           footer={(
             <div className="flex gap-2 pt-2">
               <button

@@ -23,10 +23,10 @@
 
 ## 更新摘要
 **所做更改**   
-- 新增 ImagePreviewModal 组件的详细文档说明
-- 更新组件组合模式，增加图片预览组件的使用指导
-- 增强整体UI一致性提升的相关内容
-- 补充图片预览功能的视觉设计优化说明
+- 更新 ImagePreviewModal 组件的响应式布局实现细节，反映从固定屏幕尺寸到内容自适应的改进
+- 增强按钮定位系统的文档说明，详细解释绝对定位和z-index管理策略
+- 优化最大宽度和高度设置的技术说明，解释94vw和90vh比例的选择原理
+- 补充图片容器的响应式设计优化说明
 
 ## 目录
 1. [简介](#简介)
@@ -67,7 +67,7 @@ L --> O["image-url 工具"]
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
-- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
 - [src/components/media/MediaImageWithLoading.tsx:1-92](file://src/components/media/MediaImageWithLoading.tsx#L1-L92)
 - [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
 - [src/lib/media/image-url.ts:1-90](file://src/lib/media/image-url.ts#L1-L90)
@@ -95,7 +95,7 @@ L --> O["image-url 工具"]
 - [src/components/ui/primitives/GlassButton.tsx:1-67](file://src/components/ui/primitives/GlassButton.tsx#L1-L67)
 - [src/components/ui/primitives/GlassChip.tsx:1-43](file://src/components/ui/primitives/GlassChip.tsx#L1-L43)
 - [src/components/ui/primitives/GlassModalShell.tsx:1-102](file://src/components/ui/primitives/GlassModalShell.tsx#L1-L102)
-- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
 
 ## 架构总览
 Glass UI 设计系统采用"令牌层 + 语义层 + 组件层"的分层架构：
@@ -117,7 +117,7 @@ IM --> U
 - [src/styles/ui-tokens-glass.css:1-96](file://src/styles/ui-tokens-glass.css#L1-L96)
 - [src/styles/ui-semantic-glass.css:1-465](file://src/styles/ui-semantic-glass.css#L1-L465)
 - [src/components/ui/primitives/index.ts:1-21](file://src/components/ui/primitives/index.ts#L1-L21)
-- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
 
 ## 组件详解
 
@@ -303,6 +303,7 @@ end
 
 ### ImagePreviewModal 图片预览组件
 - **新增** 设计理念：提供全屏图片预览功能，支持图片查看、原始图片链接、关闭控制与滚动管理。
+- **更新** 响应式布局实现：采用内容自适应设计，从固定屏幕尺寸改为基于视口单位的动态布局
 - 关键属性
   - imageUrl：要预览的图片地址，支持 Next.js 图像服务与存储密钥
   - onClose：关闭回调函数
@@ -312,6 +313,11 @@ end
   - 提供查看原始图片的链接（当为存储密钥时）
   - 使用 MediaImageWithLoading 组件提供加载状态
   - 应用统一的玻璃拟态视觉风格
+- **更新** 响应式设计优化
+  - 图片容器使用 `max-w-[94vw] max-h-[90vh]` 实现内容自适应
+  - 绝对定位的按钮系统通过 z-index 管理层级关系
+  - 94vw 和 90vh 的比例确保在各种屏幕尺寸下的最佳显示效果
+  - 支持 object-contain 缩放模式保持图片纵横比
 - 交互要点：点击遮罩区域或关闭按钮关闭；支持键盘事件监听；自动清理事件监听器。
 
 ```mermaid
@@ -332,11 +338,11 @@ IPM->>IPM : 移除事件监听器
 ```
 
 **图表来源**
-- [src/components/ui/ImagePreviewModal.tsx:14-77](file://src/components/ui/ImagePreviewModal.tsx#L14-L77)
+- [src/components/ui/ImagePreviewModal.tsx:14-84](file://src/components/ui/ImagePreviewModal.tsx#L14-L84)
 - [src/components/media/MediaImageWithLoading.tsx:18-91](file://src/components/media/MediaImageWithLoading.tsx#L18-L91)
 
 **章节来源**
-- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
 
 ## 依赖关系分析
 - 组件导出索引：primitives/index.ts 统一导出各组件类型与默认实现，便于按需引入与测试。
@@ -377,6 +383,7 @@ IM -.-> IMG["图片处理链路"]
 - 加载态：GlassButton 的 loading 通过任务状态解析生成，避免重复逻辑，减少分支判断。
 - **新增**：ImagePreviewModal 使用 useEffect 清理机制，确保事件监听器正确移除，防止内存泄漏。
 - **新增**：MediaImageWithLoading 组件提供骨架屏与加载指示器，改善大图加载体验。
+- **更新**：响应式布局优化减少了不必要的重绘，94vw 和 90vh 的比例在保证显示效果的同时降低了计算开销。
 
 **章节来源**
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
@@ -401,6 +408,14 @@ IM -.-> IMG["图片处理链路"]
 - **新增**：图片预览后页面仍可滚动
   - 检查 useEffect 清理函数是否执行；确认事件监听器是否正确移除。
   - 参考路径：[滚动控制逻辑:17-33](file://src/components/ui/ImagePreviewModal.tsx#L17-L33)
+- **新增**：图片显示超出屏幕范围
+  - 检查 max-w-[94vw] 和 max-h-[90vh] 样式是否正确应用。
+  - 验证 object-contain 缩放模式是否生效。
+  - 确认图片容器的 flex 布局设置。
+- **新增**：按钮定位异常或层级问题
+  - 检查绝对定位的按钮是否正确设置了 z-index。
+  - 验证按钮容器的相对定位设置。
+  - 确认按钮的点击事件是否正确阻止冒泡。
 - 主题切换后样式错乱
   - 确认暗色主题类名与变量覆盖是否正确；检查全局样式中主题层与变量桥接。
   - 参考路径：[暗色主题变量覆盖:481-513](file://src/app/globals.css#L481-L513)
@@ -414,7 +429,7 @@ IM -.-> IMG["图片处理链路"]
 - [src/app/globals.css:481-513](file://src/app/globals.css#L481-L513)
 
 ## 结论
-Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核心，实现了高一致性与可维护性的玻璃拟态界面。通过统一的令牌与语义层，组件具备良好的可定制性与可扩展性；通过合理的交互与加载态设计，提升了用户体验。新增的 ImagePreviewModal 组件进一步完善了组件库的功能完整性，提供了专业的图片预览解决方案。建议在业务开发中优先使用本组件库提供的基础组件，遵循组合与复用策略，确保风格一致与性能稳定。
+Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核心，实现了高一致性与可维护性的玻璃拟态界面。通过统一的令牌与语义层，组件具备良好的可定制性与可扩展性；通过合理的交互与加载态设计，提升了用户体验。新增的 ImagePreviewModal 组件进一步完善了组件库的功能完整性，其响应式布局改进从固定屏幕尺寸转向内容自适应，提供了更灵活的图片预览解决方案。建议在业务开发中优先使用本组件库提供的基础组件，遵循组合与复用策略，确保风格一致与性能稳定。
 
 ## 附录
 
@@ -422,7 +437,7 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
 - 组件层：通过类名组合与密度变量实现紧凑/默认两种密度，适配移动端与桌面端。
 - 样式层：语义层提供密度类名，容器组件根据密度动态选择类名。
 - 全局层：媒体查询与断点配合语义类名，实现自适应布局。
-- **新增**：ImagePreviewModal 使用 max-w-[98vw] 和 max-h-[98vh] 确保在各种屏幕尺寸下的最佳显示效果。
+- **更新**：ImagePreviewModal 采用内容自适应设计，使用 `max-w-[94vw] max-h-[90vh]` 确保在各种屏幕尺寸下的最佳显示效果。这种基于视口单位的布局方案相比固定像素尺寸更加灵活，能够自动适配不同设备的屏幕大小。
 
 **章节来源**
 - [src/styles/ui-semantic-glass.css:265-271](file://src/styles/ui-semantic-glass.css#L265-L271)
@@ -449,12 +464,13 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
   - 通过 variants/density/icon/loading 等属性在不同场景复用同一组件。
   - 使用 Portal 的 GlassModalShell 在页面任意位置渲染，避免层级与布局问题。
   - **新增**：ImagePreviewModal 通过统一的图片处理工具链，支持多种图片格式与来源。
+  - **更新**：响应式布局优化使得 ImagePreviewModal 在不同设备上都能提供一致的用户体验。
 
 **章节来源**
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassSurface.tsx:18-46](file://src/components/ui/primitives/GlassSurface.tsx#L18-L46)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
-- [src/components/ui/ImagePreviewModal.tsx:1-78](file://src/components/ui/ImagePreviewModal.tsx#L1-L78)
+- [src/components/ui/ImagePreviewModal.tsx:1-85](file://src/components/ui/ImagePreviewModal.tsx#L1-L85)
 
 ### 实际使用示例与最佳实践
 - 示例场景
@@ -469,22 +485,25 @@ Waoowaoo 的 Glass UI 组件库以清晰的分层设计与语义化类名为核�
   - 通过 Portal 渲染模态，避免定位与层级问题。
   - **新增**：使用 ImagePreviewModal 时，确保正确处理图片 URL 解析与错误情况。
   - **新增**：在图片预览组件中，合理使用 MediaImageWithLoading 提供加载反馈。
+  - **更新**：响应式布局优化使得 ImagePreviewModal 在移动端和桌面端都能提供良好的用户体验。
 
 **章节来源**
 - [src/components/ui/primitives/GlassField.tsx:18-48](file://src/components/ui/primitives/GlassField.tsx#L18-L48)
 - [src/components/ui/primitives/GlassButton.tsx:17-64](file://src/components/ui/primitives/GlassButton.tsx#L17-L64)
 - [src/components/ui/primitives/GlassModalShell.tsx:24-101](file://src/components/ui/primitives/GlassModalShell.tsx#L24-L101)
-- [src/components/ui/ImagePreviewModal.tsx:14-77](file://src/components/ui/ImagePreviewModal.tsx#L14-L77)
+- [src/components/ui/ImagePreviewModal.tsx:14-84](file://src/components/ui/ImagePreviewModal.tsx#L14-L84)
 - [src/styles/ui-tokens-glass.css:80-96](file://src/styles/ui-tokens-glass.css#L80-L96)
 
 ### 图片预览功能的视觉设计优化
 - **新增**：ImagePreviewModal 采用统一的玻璃拟态设计语言，与整体 UI 风格保持一致。
 - **新增**：使用 backdrop-blur-sm 实现毛玻璃效果，增强视觉层次感。
 - **新增**：按钮采用圆角设计与过渡动画，提供流畅的交互体验。
-- **新增**：图片容器应用 rounded-3xl 圆角，shadow-2xl 阴影，营造立体视觉效果。
+- **新增**：图片容器应用 rounded-2xl 圆角，shadow-2xl 阴影，营造立体视觉效果。
 - **新增**：支持查看原始图片功能，通过链接按钮提供直接访问选项。
+- **更新**：响应式布局优化采用 `max-w-[94vw] max-h-[90vh]` 实现内容自适应，94vw 和 90vh 的比例确保在各种屏幕尺寸下都有最佳显示效果。
+- **更新**：按钮定位系统通过绝对定位和 z-index 管理，确保关闭按钮和查看原始图片按钮不会被图片内容遮挡。
 
 **章节来源**
-- [src/components/ui/ImagePreviewModal.tsx:40-77](file://src/components/ui/ImagePreviewModal.tsx#L40-L77)
+- [src/components/ui/ImagePreviewModal.tsx:40-84](file://src/components/ui/ImagePreviewModal.tsx#L40-L84)
 - [src/components/ui/icons/AppIcon.tsx:1-15](file://src/components/ui/icons/AppIcon.tsx#L1-L15)
 - [src/lib/media/image-url.ts:51-89](file://src/lib/media/image-url.ts#L51-L89)

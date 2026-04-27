@@ -82,6 +82,23 @@ export function useAiDesignCharacter() {
   })
 }
 
+export function useAiDesignProp() {
+  return useMutation({
+    mutationFn: async (userInstruction: string) => {
+      const response = await requestTaskResponseWithError(
+        '/api/asset-hub/ai-design-prop',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userInstruction }),
+        },
+        'Failed to design prop',
+      )
+      return resolveTaskResponse<{ prompt?: string }>(response)
+    },
+  })
+}
+
 export function useExtractAssetHubReferenceCharacterDescription() {
   return useMutation({
     mutationFn: async (referenceImageUrls: string[]) => {

@@ -96,4 +96,17 @@ describe('worker asset-hub-ai-design behavior', () => {
       analysisModel: 'llm::analysis-default',
     }))
   })
+
+  it('prop type success -> passes prop assetType', async () => {
+    const job = buildJob(TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP, {
+      userInstruction: 'design a magic staff',
+    })
+
+    await handleAssetHubAIDesignTask(job)
+
+    expect(assetUtilsMock.aiDesign).toHaveBeenCalledWith(expect.objectContaining({
+      assetType: 'prop',
+      analysisModel: 'llm::analysis-default',
+    }))
+  })
 })

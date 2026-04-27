@@ -16,6 +16,12 @@ describe('resolveTaskIntent', () => {
     expect(resolveTaskIntent(TASK_TYPE.MODIFY_ASSET_IMAGE)).toBe('modify')
   })
 
+  it('maps asset hub ai design types to generate', () => {
+    expect(resolveTaskIntent(TASK_TYPE.ASSET_HUB_AI_DESIGN_CHARACTER)).toBe('generate')
+    expect(resolveTaskIntent(TASK_TYPE.ASSET_HUB_AI_DESIGN_LOCATION)).toBe('generate')
+    expect(resolveTaskIntent(TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP)).toBe('generate')
+  })
+
   it('falls back to process for unknown types', () => {
     expect(resolveTaskIntent('unknown_type')).toBe('process')
     expect(resolveTaskIntent(null)).toBe('process')

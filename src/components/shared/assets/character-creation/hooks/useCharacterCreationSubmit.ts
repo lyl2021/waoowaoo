@@ -29,7 +29,6 @@ interface UseCharacterCreationSubmitParams {
   aiInstruction: string
   artStyle: string
   referenceImagesBase64: string[]
-  referenceSubMode: 'direct' | 'extract'
   isSubAppearance: boolean
   selectedCharacterId: string
   changeReason: string
@@ -53,7 +52,6 @@ export function useCharacterCreationSubmit({
   aiInstruction,
   artStyle,
   referenceImagesBase64,
-  referenceSubMode,
   isSubAppearance,
   selectedCharacterId,
   changeReason,
@@ -82,10 +80,6 @@ export function useCharacterCreationSubmit({
     count: characterGenerationCount,
     setCount: setCharacterGenerationCount,
   } = useImageGenerationCount('character')
-  const {
-    count: referenceCharacterGenerationCount,
-    setCount: setReferenceCharacterGenerationCount,
-  } = useImageGenerationCount('reference-to-character')
 
   type CreatedCharacterResponse = {
     character?: {
@@ -144,33 +138,31 @@ export function useCharacterCreationSubmit({
       setIsSubmitting(true)
       const referenceImageUrls = await uploadReferenceImages()
 
-      let finalDescription = description.trim()
-      if (referenceSubMode === 'extract') {
-        const result = mode === 'asset-hub'
-          ? await extractAssetHubDescription.mutateAsync(referenceImageUrls)
-          : await extractProjectDescription.mutateAsync(referenceImageUrls)
-        finalDescription = result?.description || finalDescription
-      }
+      // 始终提取参考图描述
+      const result = mode === 'asset-hub'
+        ? await extractAssetHubDescription.mutateAsync(referenceImageUrls)
+        : await extractProjectDescription.mutateAsync(referenceImageUrls)
+      const finalDescription = result?.description || description.trim() || t('character.defaultDescription', { name: name.trim() })
 
       if (mode === 'asset-hub') {
         await createAssetHubCharacter.mutateAsync({
           name: name.trim(),
-          description: finalDescription || t('character.defaultDescription', { name: name.trim() }),
+          description: finalDescription,
           folderId: folderId ?? null,
           artStyle,
           generateFromReference: true,
           referenceImageUrls,
-          customDescription: referenceSubMode === 'extract' ? finalDescription : undefined,
-          count: referenceCharacterGenerationCount,
+          customDescription: finalDescription,
+          count: characterGenerationCount,
         })
       } else {
         await createProjectCharacter.mutateAsync({
           name: name.trim(),
-          description: finalDescription || t('character.defaultDescription', { name: name.trim() }),
+          description: finalDescription,
           generateFromReference: true,
           referenceImageUrls,
-          customDescription: referenceSubMode === 'extract' ? finalDescription : undefined,
-          count: referenceCharacterGenerationCount,
+          customDescription: finalDescription,
+          count: characterGenerationCount,
         })
       }
 
@@ -195,8 +187,8 @@ export function useCharacterCreationSubmit({
     name,
     onClose,
     onSuccess,
+    characterGenerationCount,
     referenceImagesBase64.length,
-    referenceSubMode,
     t,
     uploadReferenceImages,
   ])
@@ -366,8 +358,6 @@ export function useCharacterCreationSubmit({
     isExtracting,
     characterGenerationCount,
     setCharacterGenerationCount,
-    referenceCharacterGenerationCount,
-    setReferenceCharacterGenerationCount,
     handleExtractDescription,
     handleCreateWithReference,
     handleAiDesign,

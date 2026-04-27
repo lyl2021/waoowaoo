@@ -30,7 +30,7 @@
         "generationMode": "Generation Mode",
         "directGenerate": "Direct Generate",
         "extractPrompt": "Extract Prompt",
-        "extractFirst": "Extract Description First",
+        "extractFirst": "Extract description",
         "directGenerateDesc": "Directly generate character sheet from reference (img2img)",
         "extractPromptDesc": "Extract description from image first, then generate (txt2img)",
         "maxReferenceImages": "Up to 5 reference images",
@@ -67,8 +67,9 @@
         "title": "AI Design",
         "placeholder": "Describe the character you want...",
         "placeholderLocation": "Describe the scene atmosphere...",
-        "generating": "Designing...",
-        "generate": "Generate",
+        "placeholderProp": "Describe the prop's appearance and material...",
+        "generating": "Generating description...",
+        "generate": "Generate description",
         "tip": "Enter a simple description, AI will generate detailed settings"
     },
     "common": {

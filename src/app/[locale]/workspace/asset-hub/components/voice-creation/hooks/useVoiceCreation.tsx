@@ -313,6 +313,7 @@ export function useVoiceCreation({ isOpen, folderId, folders, onClose, onSuccess
         uploadSubmittingState,
         t,
         tHub,
+        tv,
         tvCreate,
         groupFolderId,
         setGroupFolderId,

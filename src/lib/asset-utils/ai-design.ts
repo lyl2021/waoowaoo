@@ -14,7 +14,7 @@ import {
 import { buildPrompt, PROMPT_IDS } from '@/lib/prompt-i18n'
 import type { Locale } from '@/i18n/routing'
 
-export type AssetType = 'character' | 'location'
+export type AssetType = 'character' | 'location' | 'prop'
 
 export interface AIDesignOptions {
     userId: string
@@ -53,7 +53,7 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
     if (!userInstruction?.trim()) {
         return {
             success: false,
-            error: assetType === 'character' ? '请输入人物设计需求' : '请输入场景设计需求'
+            error: assetType === 'character' ? '请输入人物设计需求' : assetType === 'prop' ? '请输入道具设计需求' : '请输入场景设计需求'
         }
     }
 
@@ -94,7 +94,7 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
             action,
             meta: {
                 stepId: action,
-                stepTitle: assetType === 'character' ? '角色设计' : '场景设计',
+                stepTitle: assetType === 'character' ? '角色设计' : assetType === 'prop' ? '道具设计' : '场景设计',
                 stepIndex: 1,
                 stepTotal: 1,
             },

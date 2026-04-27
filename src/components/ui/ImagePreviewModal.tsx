@@ -67,8 +67,10 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
         <MediaImageWithLoading
           src={displayImageUrl}
           alt={t('preview')}
-          containerClassName="flex items-center justify-center"
-          className="max-w-[98vw] max-h-[96vh] object-contain rounded-2xl shadow-2xl"
+          width={4096}
+          height={4096}
+          containerClassName="flex items-center justify-center rounded-2xl !bg-transparent"
+          className="w-screen max-h-[96vh] object-contain shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         />
       </div>

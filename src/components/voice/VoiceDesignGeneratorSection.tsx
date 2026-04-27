@@ -12,7 +12,7 @@ import {
   type GeneratedVoice,
 } from './voice-design-shared'
 
-const VOICE_PRESET_KEYS = [
+export const VOICE_PRESET_KEYS = [
   'maleBroadcaster',
   'gentleFemale',
   'matureMale',
@@ -21,7 +21,7 @@ const VOICE_PRESET_KEYS = [
   'narrator',
 ] as const
 
-type VoicePresetKey = (typeof VOICE_PRESET_KEYS)[number]
+export type VoicePresetKey = (typeof VOICE_PRESET_KEYS)[number]
 
 interface VoiceDesignGeneratorSectionProps {
   voicePrompt: string
@@ -40,6 +40,7 @@ interface VoiceDesignGeneratorSectionProps {
   onPlayVoice: (index: number) => void
   onGenerate: () => void
   footer?: ReactNode
+  hideStyleSection?: boolean
 }
 
 export default function VoiceDesignGeneratorSection({
@@ -59,44 +60,49 @@ export default function VoiceDesignGeneratorSection({
   onPlayVoice,
   onGenerate,
   footer = null,
+  hideStyleSection = false,
 }: VoiceDesignGeneratorSectionProps) {
   const tv = useTranslations('voice.voiceDesign')
   const normalizedSchemeCount = normalizeVoiceSchemeCount(schemeCount)
 
   return (
     <>
-      <div>
-        <div className="text-sm text-[var(--glass-text-secondary)] mb-2">{tv('selectStyle')}</div>
-        <div className="flex flex-wrap gap-1.5">
-          {VOICE_PRESET_KEYS.map((presetKey) => {
-            const prompt = tv(`presetsPrompts.${presetKey}` as `presetsPrompts.${VoicePresetKey}`)
-            return (
-              <button
-                key={presetKey}
-                onClick={() => onVoicePromptChange(prompt)}
-                className={`glass-btn-base px-2.5 py-1 text-xs rounded-md border transition-all ${
-                  voicePrompt === prompt
-                    ? 'glass-btn-tone-info border-[var(--glass-stroke-focus)]'
-                    : 'glass-btn-soft text-[var(--glass-text-secondary)] border-[var(--glass-stroke-base)] hover:border-[var(--glass-stroke-focus)]'
-                }`}
-              >
-                {tv(`presets.${presetKey}` as `presets.${VoicePresetKey}`)}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {!hideStyleSection && (
+        <>
+          <div>
+            <div className="text-sm text-[var(--glass-text-secondary)] mb-2">{tv('selectStyle')}</div>
+            <div className="flex flex-wrap gap-1.5">
+              {VOICE_PRESET_KEYS.map((presetKey) => {
+                const prompt = tv(`presetsPrompts.${presetKey}` as `presetsPrompts.${VoicePresetKey}`)
+                return (
+                  <button
+                    key={presetKey}
+                    onClick={() => onVoicePromptChange(prompt)}
+                    className={`glass-btn-base px-2.5 py-1 text-xs rounded-md border transition-all ${
+                      voicePrompt === prompt
+                        ? 'glass-btn-tone-info border-[var(--glass-stroke-focus)]'
+                        : 'glass-btn-soft text-[var(--glass-text-secondary)] border-[var(--glass-stroke-base)] hover:border-[var(--glass-stroke-focus)]'
+                    }`}
+                  >
+                    {tv(`presets.${presetKey}` as `presets.${VoicePresetKey}`)}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-      <div>
-        <div className="text-sm text-[var(--glass-text-secondary)] mb-1">{tv('orCustomDescription')}</div>
-        <textarea
-          value={voicePrompt}
-          onChange={(event) => onVoicePromptChange(event.target.value)}
-          placeholder={tv('describePlaceholder')}
-          className="glass-textarea-base w-full px-3 py-2 text-sm resize-none"
-          rows={2}
-        />
-      </div>
+          <div>
+            <div className="text-sm text-[var(--glass-text-secondary)] mb-1">{tv('orCustomDescription')}</div>
+            <textarea
+              value={voicePrompt}
+              onChange={(event) => onVoicePromptChange(event.target.value)}
+              placeholder={tv('describePlaceholder')}
+              className="glass-textarea-base w-full px-3 py-2 text-sm resize-none"
+              rows={2}
+            />
+          </div>
+        </>
+      )}
 
       <details className="text-sm">
         <summary className="text-[var(--glass-text-secondary)] cursor-pointer hover:text-[var(--glass-text-primary)]">

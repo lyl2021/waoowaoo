@@ -21,10 +21,12 @@ export async function handleAssetHubAIDesignTask(job: Job<TaskJobData>) {
     job.data.type === TASK_TYPE.ASSET_HUB_AI_DESIGN_CHARACTER
       || job.data.type === TASK_TYPE.AI_CREATE_CHARACTER
       ? 'character'
-      : job.data.type === TASK_TYPE.ASSET_HUB_AI_DESIGN_LOCATION
-        || job.data.type === TASK_TYPE.AI_CREATE_LOCATION
-        ? 'location'
-        : null
+      : job.data.type === TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP
+        ? 'prop'
+        : job.data.type === TASK_TYPE.ASSET_HUB_AI_DESIGN_LOCATION
+          || job.data.type === TASK_TYPE.AI_CREATE_LOCATION
+          ? 'location'
+          : null
   if (!assetType) {
     throw new Error(`Unsupported asset hub ai design task type: ${job.data.type}`)
   }

@@ -10,6 +10,9 @@ interface AddAssetDropdownProps {
     onAddLocation: () => void
     onAddProp: () => void
     onAddVoice: () => void
+    onImport: () => void
+    onExport: () => void
+    isExporting?: boolean
 }
 
 export function AddAssetDropdown({
@@ -17,6 +20,9 @@ export function AddAssetDropdown({
     onAddLocation,
     onAddProp,
     onAddVoice,
+    onImport,
+    onExport,
+    isExporting,
 }: AddAssetDropdownProps) {
     const t = useTranslations('assetHub')
     const [open, setOpen] = useState(false)
@@ -89,6 +95,28 @@ export function AddAssetDropdown({
                             <span>{item.label}</span>
                         </button>
                     ))}
+
+                    {/* Separator */}
+                    <div className="mx-3 my-1.5 h-px bg-[var(--glass-stroke-base)]" />
+
+                    {/* Import */}
+                    <button
+                        onClick={() => handleSelect(onImport)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--glass-text-primary)] hover:bg-[var(--glass-bg-muted)] transition-colors cursor-pointer"
+                    >
+                        <AppIcon name="upload" className="w-4 h-4 text-[var(--glass-text-tertiary)]" />
+                        <span>{t('importAsset')}</span>
+                    </button>
+
+                    {/* Export */}
+                    <button
+                        onClick={() => handleSelect(onExport)}
+                        disabled={isExporting}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--glass-text-primary)] hover:bg-[var(--glass-bg-muted)] transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        <AppIcon name={isExporting ? 'refresh' : 'download'} className={`w-4 h-4 text-[var(--glass-text-tertiary)] ${isExporting ? 'animate-spin' : ''}`} />
+                        <span>{isExporting ? t('downloading') : t('exportAsset')}</span>
+                    </button>
                 </div>,
                 document.body,
             )}

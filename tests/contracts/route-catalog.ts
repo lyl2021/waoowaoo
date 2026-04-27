@@ -43,6 +43,7 @@ const ROUTE_FILES = [
   'src/app/api/asset-hub/folders/[folderId]/route.ts',
   'src/app/api/asset-hub/folders/route.ts',
   'src/app/api/asset-hub/generate-image/route.ts',
+  'src/app/api/asset-hub/import/route.ts',
   'src/app/api/asset-hub/locations/[locationId]/route.ts',
   'src/app/api/asset-hub/locations/route.ts',
   'src/app/api/asset-hub/modify-image/route.ts',

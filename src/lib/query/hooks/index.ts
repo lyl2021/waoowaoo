@@ -60,6 +60,7 @@ export {
     useCreateAssetHubLocation,
     useUploadAssetHubTempMedia,
     useAiDesignCharacter,
+    useAiDesignProp,
     useExtractAssetHubReferenceCharacterDescription,
     useCreateAssetHubCharacter,
 } from '../mutations/useAssetHubMutations'

@@ -119,6 +119,8 @@
         "optionNumber": "Option {number}",
         "optionSelected": "Selected Option {number}",
         "confirmOption": "Confirm Option {number}",
+        "confirmRefresh": "Are you sure you want to regenerate? Current images will be overwritten.",
+        "refresh": "Confirm Regenerate",
         "deleteOthersHint": "(delete others)",
         "confirmSuccess": "Selection confirmed",
         "confirmFailed": "Confirm selection failed: {error}",

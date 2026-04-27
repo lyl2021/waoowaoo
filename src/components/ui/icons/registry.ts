@@ -122,6 +122,7 @@ export const iconRegistry = {
   alert: TriangleAlert,
   alertSolid: TriangleAlert,
   alertOutline: TriangleAlert,
+  alertTriangle: TriangleAlert,
   pause: Pause,
   pauseSolid: Pause,
   play: Play,

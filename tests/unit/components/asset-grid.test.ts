@@ -57,6 +57,7 @@ const messages = {
     downloadAll: '打包下载',
     downloadAllTitle: '下载全部图片资产',
     downloading: '打包中...',
+    exportAsset: '导出资产',
     emptyState: '暂无资产',
     emptyStateHint: '点击上方按钮添加角色或场景',
     filteredEmptyHint: '点击新建资产添加资产',
@@ -92,6 +93,8 @@ describe('AssetGrid', () => {
         onAddLocation: () => undefined,
         onAddProp: () => undefined,
         onAddVoice: () => undefined,
+        onImport: () => undefined,
+        onExport: () => undefined,
         filter: 'all',
       }),
     )
@@ -142,6 +145,8 @@ describe('AssetGrid', () => {
         onAddLocation: () => undefined,
         onAddProp: () => undefined,
         onAddVoice: () => undefined,
+        onImport: () => undefined,
+        onExport: () => undefined,
         filter: 'location',
       }),
     )

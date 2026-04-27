@@ -119,6 +119,8 @@
         "optionNumber": "方案{number}",
         "optionSelected": "已选择方案{number}",
         "confirmOption": "确定选择方案{number}",
+        "confirmRefresh": "确定要重新生成吗？当前已确定的图片将被覆盖。",
+        "refresh": "确认重新生成",
         "deleteOthersHint": "（删除其他）",
         "confirmSuccess": "确认成功",
         "confirmFailed": "确认选择失败: {error}",

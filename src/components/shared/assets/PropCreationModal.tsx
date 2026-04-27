@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { DragEvent, MouseEvent } from 'react'
 import { useTranslations } from 'next-intl'
+import PropCreationForm from './prop-creation/PropCreationForm'
+import { usePropCreationSubmit } from './prop-creation/hooks/usePropCreationSubmit'
 import { AppIcon } from '@/components/ui/icons'
-import TaskStatusInline from '@/components/task/TaskStatusInline'
-import { resolveTaskPresentationState } from '@/lib/task/presentation'
-import { useAssetActions } from '@/lib/query/hooks'
-import { useImageGenerationCount } from '@/lib/image-generation/use-image-generation-count'
 import ImageGenerationInlineCountButton from '@/components/image-generation/ImageGenerationInlineCountButton'
 import { getImageGenerationCountOptions } from '@/lib/image-generation/count'
 
@@ -19,6 +18,10 @@ export interface PropCreationModalProps {
   onSuccess: () => void
 }
 
+const XMarkIcon = ({ className }: { className?: string }) => (
+  <AppIcon name="close" className={className} />
+)
+
 export function PropCreationModal({
   mode,
   folderId,
@@ -28,73 +31,128 @@ export function PropCreationModal({
   onSuccess,
 }: PropCreationModalProps) {
   const t = useTranslations('assetModal')
-  const tHub = useTranslations('assetHub')
-  const actions = useAssetActions({
-    scope: mode === 'asset-hub' ? 'global' : 'project',
-    projectId,
-    kind: 'prop',
-  })
-  const { count, setCount } = useImageGenerationCount('location')
+
+  const [createMode, setCreateMode] = useState<'reference' | 'description'>('description')
   const [name, setName] = useState('')
-  const [summary, setSummary] = useState('')
   const [description, setDescription] = useState('')
+  const [aiInstruction, setAiInstruction] = useState('')
   const [artStyle, setArtStyle] = useState('american-comic')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [referenceImagesBase64, setReferenceImagesBase64] = useState<string[]>([])
   const [groupFolderId, setGroupFolderId] = useState<string | null>(
     mode === 'asset-hub' ? (folderId ?? null) : null
   )
-  const submittingState = isSubmitting
-    ? resolveTaskPresentationState({
-      phase: 'processing',
-      intent: 'generate',
-      resource: 'image',
-      hasOutput: false,
-    })
-    : null
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const {
+    isSubmitting,
+    isAiDesigning,
+    isExtracting,
+    count,
+    setCount,
+    handleExtractDescription,
+    handleAiDesign,
+    handleSubmit,
+  } = usePropCreationSubmit({
+    mode,
+    folderId: groupFolderId,
+    projectId,
+    name,
+    description,
+    aiInstruction,
+    artStyle,
+    referenceImagesBase64,
+    setDescription,
+    setAiInstruction,
+    onSuccess,
+    onClose,
+  })
+
+  const handleFileSelect = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith('image/'))
+    if (fileArray.length === 0) return
+
+    const remaining = 5 - referenceImagesBase64.length
+    const toAdd = fileArray.slice(0, remaining)
+
+    for (const file of toAdd) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string
+        setReferenceImagesBase64((prev) => {
+          if (prev.length >= 5) return prev
+          if (prev.includes(base64)) return prev
+          return [...prev, base64]
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+  }, [referenceImagesBase64.length])
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isSubmitting) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting && !isAiDesigning) {
         onClose()
       }
     }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [isSubmitting, onClose])
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isAiDesigning, isSubmitting, onClose])
 
-  const handleSubmit = async (generateAfterCreate: boolean) => {
-    if (!name.trim() || !summary.trim() || !description.trim()) return
-    try {
-      setIsSubmitting(true)
-      const result = await actions.create({
-        name: name.trim(),
-        summary: summary.trim(),
-        description: description.trim(),
-        folderId: groupFolderId,
-        artStyle,
-      }) as { assetId?: string }
-      if (generateAfterCreate) {
-        if (!result.assetId) {
-          throw new Error('Missing assetId from create response')
-        }
-        await actions.generate({
-          id: result.assetId,
-          artStyle,
-          count,
-        })
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      if (createMode !== 'reference') return
+
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        if (!items[i].type.startsWith('image/')) continue
+        const file = items[i].getAsFile()
+        if (!file) continue
+        e.preventDefault()
+        void handleFileSelect([file])
+        break
       }
-      onSuccess()
+    }
+
+    document.addEventListener('paste', handleGlobalPaste)
+    return () => document.removeEventListener('paste', handleGlobalPaste)
+  }, [createMode, handleFileSelect])
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.files.length > 0) {
+      void handleFileSelect(e.dataTransfer.files)
+    }
+  }
+
+  const handleClearReference = (index?: number) => {
+    if (typeof index === 'number') {
+      setReferenceImagesBase64((prev) => prev.filter((_, i) => i !== index))
+      return
+    }
+    setReferenceImagesBase64([])
+  }
+
+  const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && !isSubmitting && !isAiDesigning) {
       onClose()
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 glass-overlay flex items-center justify-center z-50 p-4">
-      <div className="glass-surface-modal max-w-2xl w-full max-h-[85vh] flex flex-col">
+    <div
+      className="fixed inset-0 glass-overlay flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div className="glass-surface-modal max-w-lg w-full max-h-[85vh] flex flex-col">
         <div className="p-6 overflow-y-auto flex-1">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-[var(--glass-text-primary)]">
               {t('prop.title')}
             </h3>
@@ -102,67 +160,38 @@ export function PropCreationModal({
               onClick={onClose}
               className="glass-btn-base glass-btn-soft w-8 h-8 rounded-full flex items-center justify-center text-[var(--glass-text-tertiary)]"
             >
-              <AppIcon name="close" className="w-5 h-5" />
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="glass-field-label block">
-                {t('prop.name')} <span className="text-[var(--glass-tone-danger-fg)]">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t('prop.namePlaceholder')}
-                className="glass-input-base w-full px-3 py-2 text-sm"
-              />
-            </div>
-
-          <div className="space-y-2">
-            <label className="glass-field-label block">
-              {t('prop.summary')} <span className="text-[var(--glass-tone-danger-fg)]">*</span>
-              </label>
-              <textarea
-                value={summary}
-                onChange={(event) => setSummary(event.target.value)}
-                placeholder={t('prop.summaryPlaceholder')}
-                className="glass-textarea-base w-full h-36 px-3 py-2 text-sm resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="glass-field-label block">
-                {t('prop.description')} <span className="text-[var(--glass-tone-danger-fg)]">*</span>
-              </label>
-              <textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder={t('prop.descriptionPlaceholder')}
-                className="glass-textarea-base w-full h-36 px-3 py-2 text-sm resize-none"
-              />
-            </div>
-          </div>
+          <PropCreationForm
+            createMode={createMode}
+            setCreateMode={(value) => setCreateMode(value)}
+            name={name}
+            setName={(value) => setName(value)}
+            description={description}
+            setDescription={(value) => setDescription(value)}
+            aiInstruction={aiInstruction}
+            setAiInstruction={(value) => setAiInstruction(value)}
+            artStyle={artStyle}
+            setArtStyle={(value) => setArtStyle(value)}
+            referenceImagesBase64={referenceImagesBase64}
+            fileInputRef={fileInputRef}
+            handleDrop={handleDrop}
+            handleFileSelect={(files) => void handleFileSelect(files)}
+            handleClearReference={handleClearReference}
+            handleExtractDescription={() => { void handleExtractDescription() }}
+            handleAiDesign={() => { void handleAiDesign() }}
+            isAiDesigning={isAiDesigning}
+            isExtracting={isExtracting}
+            mode={mode}
+            folders={folders}
+            groupFolderId={groupFolderId}
+            onGroupFolderChange={(id) => setGroupFolderId(id)}
+          />
         </div>
 
-        {mode === 'asset-hub' && folders && (
-          <div className="px-6 pb-4 space-y-2">
-            <label className="glass-field-label block">{tHub('selectGroup')}</label>
-            <select
-              value={groupFolderId ?? '__default__'}
-              onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
-              className="glass-input-base w-full px-3 py-2 text-sm"
-            >
-              <option value="__default__">{tHub('defaultGroup')}</option>
-              {folders.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="flex gap-3 justify-end p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-xl flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--glass-stroke-base)] bg-[var(--glass-bg-surface-strong)] rounded-b-xl flex-shrink-0">
           <button
             onClick={onClose}
             className="glass-btn-base glass-btn-secondary px-4 py-2 rounded-lg text-sm"
@@ -171,12 +200,12 @@ export function PropCreationModal({
             {t('common.cancel')}
           </button>
           <button
-            onClick={() => void handleSubmit(false)}
-            disabled={isSubmitting || !name.trim() || !summary.trim() || !description.trim()}
+            onClick={() => { void handleSubmit(false) }}
+            disabled={isSubmitting || !name.trim() || !description.trim()}
             className="glass-btn-base glass-btn-secondary px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
           >
             {isSubmitting ? (
-              <TaskStatusInline state={submittingState} className="text-white [&>span]:text-white [&_svg]:text-white" />
+              <span>{t('common.adding')}</span>
             ) : (
               <span>{mode === 'asset-hub' ? t('common.addOnlyToAssetHubProp') : t('common.addOnlyProp')}</span>
             )}
@@ -187,8 +216,8 @@ export function PropCreationModal({
             value={count}
             options={getImageGenerationCountOptions('location')}
             onValueChange={setCount}
-            onClick={() => void handleSubmit(true)}
-            actionDisabled={!name.trim() || !summary.trim() || !description.trim()}
+            onClick={() => { void handleSubmit(true) }}
+            actionDisabled={!name.trim() || (!description.trim() && referenceImagesBase64.length === 0)}
             selectDisabled={isSubmitting}
             ariaLabel={t('common.selectGenerateCount')}
             className="glass-btn-base glass-btn-primary flex items-center justify-center gap-1 rounded-lg px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"

@@ -32,7 +32,6 @@ export function CharacterCreationModal({
   onSuccess,
 }: CharacterCreationModalProps) {
   const t = useTranslations('assetModal')
-  const tHub = useTranslations('assetHub')
 
   const [createMode, setCreateMode] = useState<'reference' | 'description'>('description')
   const [name, setName] = useState('')
@@ -40,7 +39,6 @@ export function CharacterCreationModal({
   const [aiInstruction, setAiInstruction] = useState('')
   const [artStyle, setArtStyle] = useState('american-comic')
   const [referenceImagesBase64, setReferenceImagesBase64] = useState<string[]>([])
-  const [referenceSubMode, setReferenceSubMode] = useState<'direct' | 'extract'>('direct')
   const [isSubAppearance, setIsSubAppearance] = useState(false)
   const [selectedCharacterId, setSelectedCharacterId] = useState('')
   const [changeReason, setChangeReason] = useState('')
@@ -67,8 +65,6 @@ export function CharacterCreationModal({
     isExtracting,
     characterGenerationCount,
     setCharacterGenerationCount,
-    referenceCharacterGenerationCount,
-    setReferenceCharacterGenerationCount,
     handleExtractDescription,
     handleCreateWithReference,
     handleAiDesign,
@@ -83,7 +79,6 @@ export function CharacterCreationModal({
     aiInstruction,
     artStyle,
     referenceImagesBase64,
-    referenceSubMode,
     isSubAppearance,
     selectedCharacterId,
     changeReason,
@@ -170,6 +165,14 @@ export function CharacterCreationModal({
     }
   }
 
+  const handleAddAndGenerate = useCallback(async () => {
+    if (createMode === 'reference' && referenceImagesBase64.length > 0) {
+      await handleCreateWithReference()
+    } else {
+      await handleSubmitAndGenerate()
+    }
+  }, [createMode, referenceImagesBase64.length, handleCreateWithReference, handleSubmitAndGenerate])
+
   return (
     <div
       className="fixed inset-0 glass-overlay flex items-center justify-center z-50 p-4"
@@ -189,22 +192,6 @@ export function CharacterCreationModal({
             </button>
           </div>
 
-          {mode === 'asset-hub' && folders && (
-            <div className="mb-4 space-y-2">
-              <label className="glass-field-label block">{tHub('selectGroup')}</label>
-              <select
-                value={groupFolderId ?? '__default__'}
-                onChange={(e) => setGroupFolderId(e.target.value === '__default__' ? null : e.target.value)}
-                className="glass-input-base w-full px-3 py-2 text-sm"
-              >
-                <option value="__default__">{tHub('defaultGroup')}</option>
-                {folders.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <CharacterCreationForm
             mode={mode}
             createMode={createMode}
@@ -218,8 +205,6 @@ export function CharacterCreationModal({
             artStyle={artStyle}
             setArtStyle={(value) => setArtStyle(value)}
             referenceImagesBase64={referenceImagesBase64}
-            referenceSubMode={referenceSubMode}
-            setReferenceSubMode={(value) => setReferenceSubMode(value)}
             isSubAppearance={isSubAppearance}
             setIsSubAppearance={(value) => setIsSubAppearance(value)}
             selectedCharacterId={selectedCharacterId}
@@ -233,9 +218,11 @@ export function CharacterCreationModal({
             handleClearReference={handleClearReference}
             handleExtractDescription={() => { void handleExtractDescription() }}
             handleAiDesign={() => { void handleAiDesign() }}
-            isSubmitting={isSubmitting}
             isAiDesigning={isAiDesigning}
             isExtracting={isExtracting}
+            folders={folders}
+            groupFolderId={groupFolderId}
+            onGroupFolderChange={(id) => setGroupFolderId(id)}
           />
         </div>
 
@@ -247,21 +234,7 @@ export function CharacterCreationModal({
           >
             {t('common.cancel')}
           </button>
-          {createMode === 'reference' ? (
-            <ImageGenerationInlineCountButton
-              prefix={<span>{t('character.useReferenceGeneratePrefix')}</span>}
-              suffix={<span>{t('character.generateCountSuffix')}</span>}
-              value={referenceCharacterGenerationCount}
-              options={getImageGenerationCountOptions('reference-to-character')}
-              onValueChange={setReferenceCharacterGenerationCount}
-              onClick={() => { void handleCreateWithReference() }}
-              actionDisabled={!name.trim() || referenceImagesBase64.length === 0}
-              selectDisabled={isSubmitting}
-              ariaLabel={t('character.selectReferenceGenerateCount')}
-              className="glass-btn-base glass-btn-primary flex items-center justify-center gap-1 rounded-lg px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-              selectClassName="appearance-none bg-transparent border-0 pl-0 pr-3 text-sm font-semibold text-current outline-none cursor-pointer leading-none transition-colors"
-            />
-          ) : isSubAppearance ? (
+          {isSubAppearance ? (
             <button
               onClick={() => { void handleSubmit() }}
               disabled={isSubmitting || !selectedCharacterId.trim() || !changeReason.trim() || !description.trim()}
@@ -284,8 +257,8 @@ export function CharacterCreationModal({
                 value={characterGenerationCount}
                 options={getImageGenerationCountOptions('character')}
                 onValueChange={setCharacterGenerationCount}
-                onClick={() => { void handleSubmitAndGenerate() }}
-                actionDisabled={!name.trim() || !description.trim()}
+                onClick={() => { void handleAddAndGenerate() }}
+                actionDisabled={!name.trim() || (!description.trim() && referenceImagesBase64.length === 0)}
                 selectDisabled={isSubmitting}
                 ariaLabel={t('common.selectGenerateCount')}
                 className="glass-btn-base glass-btn-primary flex items-center justify-center gap-1 rounded-lg px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"

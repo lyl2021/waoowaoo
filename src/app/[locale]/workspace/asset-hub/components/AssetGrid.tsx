@@ -20,6 +20,8 @@ interface AssetGridProps {
     onAddLocation: () => void
     onAddProp: () => void
     onAddVoice: () => void
+    onImport: () => void
+    onExport: () => void
     onImageClick?: (url: string) => void
     onImageEdit?: (type: 'character' | 'location' | 'prop', id: string, name: string, imageIndex: number, appearanceIndex?: number) => void
     onVoiceDesign?: (characterId: string, characterName: string) => void
@@ -38,6 +40,8 @@ export function AssetGrid({
     onAddLocation,
     onAddProp,
     onAddVoice,
+    onImport,
+    onExport,
     onImageClick,
     onImageEdit,
     onVoiceDesign,
@@ -215,6 +219,8 @@ export function AssetGrid({
                             onAddLocation={onAddLocation}
                             onAddProp={onAddProp}
                             onAddVoice={onAddVoice}
+                            onImport={onImport}
+                            onExport={onExport}
                         />
                     </div>
                 </div>

@@ -125,6 +125,10 @@ export const PROMPT_CATALOG: Record<PromptId, PromptCatalogEntry> = {
     pathStem: 'novel-promotion/location_regenerate',
     variableKeys: ['location_name', 'current_descriptions'],
   },
+  [PROMPT_IDS.NP_PROP_CREATE]: {
+    pathStem: 'novel-promotion/prop_create',
+    variableKeys: ['user_input'],
+  },
   [PROMPT_IDS.NP_PROP_DESCRIPTION_UPDATE]: {
     pathStem: 'novel-promotion/prop_description_update',
     variableKeys: ['prop_name', 'original_description', 'modify_instruction', 'image_context'],

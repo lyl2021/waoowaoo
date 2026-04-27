@@ -466,4 +466,11 @@ describe('api contract - crud routes (behavior)', () => {
       },
     })
   })
+
+  it('new asset-hub routes are registered in the crud-asset-hub-routes group', () => {
+    const routeFiles = routes.map((r) => r.routeFile)
+    expect(routeFiles).toContain('src/app/api/asset-hub/ai-design-prop/route.ts')
+    expect(routeFiles).toContain('src/app/api/asset-hub/describe-images/route.ts')
+    expect(routeFiles).toContain('src/app/api/asset-hub/import/route.ts')
+  })
 })
