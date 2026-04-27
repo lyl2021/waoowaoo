@@ -72,22 +72,26 @@ function NavItem({
     }
 
     return (
-        <div className="relative group">
+        <div className="relative group" data-nav-item>
             <button
                 onClick={handleClick}
                 onAuxClick={handleAuxClick}
                 disabled={disabled}
                 className={`
-                    relative flex items-center gap-1 transition-all duration-300 ease-out
+                    relative z-10 flex items-center justify-center gap-1 transition-colors duration-200
                     ${compact
-                        ? 'px-3 py-1.5 text-[13px]'
+                        ? 'px-3 py-1.5 text-[13px] rounded-[10px]'
                         : 'min-h-[52px] px-6 pt-3.5 pb-4'}
                     ${disabled
                         ? 'cursor-not-allowed'
-                        : active
-                            ? 'text-[var(--glass-tone-info-fg)]'
-                            : 'text-[var(--glass-text-tertiary)] hover:text-[var(--glass-text-primary)]'}
-                    ${!disabled && 'active:scale-[0.98]'}
+                        : compact
+                            ? active
+                                ? 'text-[#1d1d1f] dark:text-white'
+                                : 'text-[#86868b] hover:text-[#6e6e73]'
+                            : active
+                                ? 'text-[var(--glass-tone-info-fg)]'
+                                : 'text-[var(--glass-text-tertiary)] hover:text-[var(--glass-text-primary)]'}
+                    ${!disabled && 'cursor-pointer'}
                 `}
             >
                 {disabled ? (
@@ -133,9 +137,24 @@ function NavItem({
 
 /**
  * CapsuleNav - 胶囊形态悬浮导航
+ * compact 模式采用 SegmentedControl 风格的滑动 pill 指示器
  * 支持中键和Ctrl+点击在新标签页打开
  */
 export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId, className, compact }: CapsuleNavProps) {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [indicator, setIndicator] = useState<{ left: number; width: number }>({ left: 0, width: 0 })
+
+    // compact 模式：计算滑动 pill 指示器位置
+    useEffect(() => {
+        if (!compact || !containerRef.current) return
+        const activeIndex = items.findIndex((item) => item.id === activeId)
+        const buttons = containerRef.current.querySelectorAll<HTMLElement>('[data-nav-item]')
+        const activeButton = buttons[activeIndex]
+        if (activeButton) {
+            setIndicator({ left: activeButton.offsetLeft, width: activeButton.offsetWidth })
+        }
+    }, [compact, activeId, items])
+
     // 构建每个导航项的链接地址
     const buildHref = (stageId: string): string | undefined => {
         if (!projectId) return undefined
@@ -147,11 +166,41 @@ export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId,
         return `/workspace/${projectId}?${params.toString()}`
     }
 
+    if (compact) {
+        return (
+            <nav className={className}>
+                <div className="rounded-xl p-[3px] bg-[#e8e8ed] dark:bg-[#1c1c1e] inline-block">
+                    <div ref={containerRef} className="relative inline-grid grid-flow-col auto-cols-[minmax(0,max-content)]">
+                        {/* 滑动 pill 指示器 */}
+                        <div
+                            className="absolute top-0 bottom-0 rounded-[10px] bg-white dark:bg-[#3a3a3c] shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.05)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            style={{ left: indicator.left, width: indicator.width }}
+                        />
+                        {items.map((item) => (
+                            <NavItem
+                                key={item.id}
+                                active={activeId === item.id}
+                                onClick={() => onItemClick(item.id)}
+                                label={item.label}
+                                status={item.status}
+                                href={buildHref(item.id)}
+                                disabled={item.disabled}
+                                disabledLabel={item.disabledLabel}
+                                count={item.count}
+                                compact
+                            />
+                        ))}
+                    </div>
+                </div>
+            </nav>
+        )
+    }
+
     return (
         <nav className={className}>
             <div
-                className={`flex rounded-full ${compact ? 'px-1 py-0.5 bg-[#e8e8ed] dark:bg-[#1c1c1e]' : 'px-2 py-1'}`}
-                style={compact ? {} : {
+                className="flex rounded-full px-2 py-1"
+                style={{
                     background: 'rgba(255,255,255,0.55)',
                     backdropFilter: 'blur(24px) saturate(1.6)',
                     WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
@@ -170,7 +219,6 @@ export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId,
                         disabled={item.disabled}
                         disabledLabel={item.disabledLabel}
                         count={item.count}
-                        compact={compact}
                     />
                 ))}
             </div>
@@ -241,13 +289,13 @@ export function EpisodeSelector({
                 className="glass-btn-base glass-btn-secondary flex items-center gap-2 px-3 py-1.5 transition-all group"
                 style={{ borderRadius: '1.5rem' }}
             >
-                <div className="glass-surface-soft flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold text-[var(--glass-tone-info-fg)]">
-                    {t('episode')}
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--glass-bg-muted)]">
+                    <AppIcon name="film" className="w-4 h-4 text-[var(--glass-text-primary)]" />
                 </div>
                 <div className="flex items-center text-left mr-1 gap-1.5">
                     {currentEp.episodeNumber != null && (
                         <span className="text-sm font-semibold text-[var(--glass-text-primary)] whitespace-nowrap">
-                            剧集 {currentEp.episodeNumber}
+                            {t('episode')}{currentEp.episodeNumber}
                         </span>
                     )}
                     <span className="text-sm text-[var(--glass-text-secondary)] truncate max-w-[140px]">
@@ -273,17 +321,11 @@ export function EpisodeSelector({
                     )}
                     <div className="max-h-[300px] overflow-y-auto app-scrollbar space-y-1">
                         {episodes.map(ep => {
-                            const statusColor = ep.status?.visual === 'ready'
-                                ? 'bg-[var(--glass-tone-success-fg)]'
-                                : ep.status?.script === 'ready'
-                                    ? 'bg-[var(--glass-accent-from)]'
-                                    : 'bg-[var(--glass-stroke-strong)]'
-
                             // 编辑模式
                             if (editingId === ep.id) {
                                 return (
                                     <div key={ep.id} className="flex items-center gap-2 p-3 rounded-xl bg-[var(--glass-tone-info-bg)] border border-[var(--glass-stroke-focus)]">
-                                        <div className={`w-2 h-10 rounded-full ${statusColor}`} />
+                                        <AppIcon name="film" className="w-4 h-4 text-[var(--glass-text-tertiary)] shrink-0" />
                                         <input
                                             type="text"
                                             value={editingName}
@@ -359,12 +401,12 @@ export function EpisodeSelector({
                                         onClick={() => { onSelect(ep.id); setIsOpen(false); }}
                                         className="flex-1 flex items-center gap-3 text-left"
                                     >
-                                        <div className={`w-2 h-10 rounded-full ${statusColor}`} />
+                                        <AppIcon name="film" className="w-4 h-4 text-[var(--glass-text-tertiary)] shrink-0" />
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
                                                 {ep.episodeNumber != null && (
                                                     <span className="text-xs font-bold text-[var(--glass-tone-info-fg)] bg-[var(--glass-tone-info-bg)] px-1.5 py-0.5 rounded-md shrink-0">
-                                                        #{ep.episodeNumber}
+                                                        {t('episode')}{ep.episodeNumber}
                                                     </span>
                                                 )}
                                                 <div className="font-bold text-[var(--glass-text-primary)] text-sm truncate">{ep.title}</div>
