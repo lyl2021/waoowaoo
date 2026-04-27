@@ -60,7 +60,7 @@ export function usePropCreationSubmit({
   const {
     count,
     setCount,
-  } = useImageGenerationCount('location')
+  } = useImageGenerationCount('prop')
 
   const uploadReferenceImages = useCallback(async () => {
     const uploadMutation = mode === 'asset-hub' ? uploadAssetHubTemp : uploadProjectTemp

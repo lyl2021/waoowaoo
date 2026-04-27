@@ -80,7 +80,8 @@ export function LocationCard({ location, assetType = 'location', folderMap, onIm
 
   const t = useTranslations('assetHub')
   const tAssets = useTranslations('assets')
-  const { count: generationCount, setCount: setGenerationCount } = useImageGenerationCount('location')
+  const countScope = assetType === 'prop' ? 'prop' : 'location'
+  const { count: generationCount, setCount: setGenerationCount } = useImageGenerationCount(countScope)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)

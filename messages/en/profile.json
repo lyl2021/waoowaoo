@@ -86,6 +86,7 @@
     "episode_split_llm": "Episode Split",
     "asset_hub_ai_design_character": "Asset Hub AI Design Character",
     "asset_hub_ai_design_location": "Asset Hub AI Design Location",
+    "asset_hub_ai_design_prop": "Asset Hub AI Design Prop",
     "asset_hub_ai_modify_character": "Asset Hub AI Modify Character",
     "asset_hub_ai_modify_location": "Asset Hub AI Modify Location",
     "asset_hub_reference_to_character": "Asset Hub Reference to Character",

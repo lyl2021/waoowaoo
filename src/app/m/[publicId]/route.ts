@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSignedUrl, toFetchableUrl } from '@/lib/storage'
+import { getObjectBuffer } from '@/lib/storage'
 import { getMediaObjectByPublicId } from '@/lib/media/service'
 
 export const runtime = 'nodejs'
@@ -40,33 +40,44 @@ export async function GET(
     })
   }
 
-  const fetchUrl = toFetchableUrl(getSignedUrl(media.storageKey))
-  const range = request.headers.get('range')
-
-  const upstream = await fetch(fetchUrl, {
-    headers: range ? { Range: range } : undefined,
-  })
-
-  if (!upstream.ok) {
-    const status = upstream.status === 404 ? 404 : 502
-    return NextResponse.json({ error: 'Failed to fetch media' }, { status })
+  // 直接从存储获取文件流，避免签名 URL 中 Docker 内部地址暴露给浏览器
+  let buffer: Buffer
+  try {
+    buffer = await getObjectBuffer(media.storageKey)
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch media' }, { status: 502 })
   }
 
-  const contentType = media.mimeType || upstream.headers.get('content-type') || 'application/octet-stream'
-  const contentLength = upstream.headers.get('content-length')
-  const contentRange = upstream.headers.get('content-range')
-  const acceptRanges = upstream.headers.get('accept-ranges') || (contentType.startsWith('video/') ? 'bytes' : null)
+  const contentType = media.mimeType || 'application/octet-stream'
+  const range = request.headers.get('range')
+
+  // 处理 Range 请求（视频流等场景）
+  if (range) {
+    const parts = range.replace(/bytes=/, '').split('-')
+    const start = parseInt(parts[0], 10)
+    const end = parts[1] ? parseInt(parts[1], 10) : buffer.length - 1
+    const chunk = buffer.subarray(start, end + 1)
+
+    const headers = new Headers()
+    headers.set('Content-Type', contentType)
+    headers.set('Content-Range', `bytes ${start}-${end}/${buffer.length}`)
+    headers.set('Content-Length', String(chunk.length))
+    headers.set('Accept-Ranges', 'bytes')
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+    headers.set('ETag', etag)
+
+    return new Response(new Uint8Array(chunk), { status: 206, headers })
+  }
 
   const headers = new Headers()
   headers.set('Content-Type', contentType)
+  headers.set('Content-Length', String(buffer.length))
+  headers.set('Accept-Ranges', 'bytes')
   headers.set('Cache-Control', 'public, max-age=31536000, immutable')
   headers.set('ETag', etag)
-  if (contentLength) headers.set('Content-Length', contentLength)
-  if (contentRange) headers.set('Content-Range', contentRange)
-  if (acceptRanges) headers.set('Accept-Ranges', acceptRanges)
 
-  return new Response(upstream.body, {
-    status: upstream.status === 206 ? 206 : 200,
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
     headers,
   })
 }

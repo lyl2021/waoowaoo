@@ -1,6 +1,7 @@
 export type ImageGenerationCountScope =
   | 'character'
   | 'location'
+  | 'prop'
   | 'storyboard-candidates'
   | 'reference-to-character'
 
@@ -23,6 +24,12 @@ const IMAGE_GENERATION_COUNT_CONFIG: Record<ImageGenerationCountScope, ImageGene
     min: 1,
     max: 6,
     storageKey: 'image-count:location',
+  },
+  prop: {
+    defaultValue: 3,
+    min: 1,
+    max: 6,
+    storageKey: 'image-count:prop',
   },
   'storyboard-candidates': {
     defaultValue: 1,

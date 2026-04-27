@@ -86,6 +86,7 @@
         "episode_split_llm": "章节拆分",
         "asset_hub_ai_design_character": "素材库 AI 设计角色",
         "asset_hub_ai_design_location": "素材库 AI 设计场景",
+        "asset_hub_ai_design_prop": "素材库 AI 设计道具",
         "asset_hub_ai_modify_character": "素材库 AI 修改角色",
         "asset_hub_ai_modify_location": "素材库 AI 修改场景",
         "asset_hub_reference_to_character": "素材库参考图转角色",

@@ -80,6 +80,16 @@ const FLOW_DEFINITIONS: ReadonlyArray<LLMTaskFlowDefinition> = [
       },
     ],
   },
+  {
+    id: 'asset_hub_ai_design_prop',
+    stages: [
+      {
+        id: TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP,
+        taskType: TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP,
+        title: getTaskTypeLabel(TASK_TYPE.ASSET_HUB_AI_DESIGN_PROP),
+      },
+    ],
+  },
 ]
 
 const FLOW_BY_ID: Record<string, LLMTaskFlowDefinition> = FLOW_DEFINITIONS.reduce(

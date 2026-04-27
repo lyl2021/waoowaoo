@@ -68,7 +68,9 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
     try {
         finalPrompt = buildPrompt({
             promptId: assetType === 'character'
-                ? PROMPT_IDS.NP_CHARACTER_CREATE
+            ? PROMPT_IDS.NP_CHARACTER_CREATE
+            : assetType === 'prop'
+                ? PROMPT_IDS.NP_PROP_CREATE
                 : PROMPT_IDS.NP_LOCATION_CREATE,
             locale,
             variables: {
@@ -81,7 +83,11 @@ export async function aiDesign(options: AIDesignOptions): Promise<AIDesignResult
     }
 
     // 调用 LLM
-    const action = assetType === 'character' ? 'ai_design_character' : 'ai_design_location'
+    const action = assetType === 'character'
+        ? 'ai_design_character'
+        : assetType === 'prop'
+            ? 'ai_design_prop'
+            : 'ai_design_location'
     const maxInputTokens = Math.max(1200, Math.ceil(finalPrompt.length * 1.2))
     const maxOutputTokens = 1200
     const runCompletion = async () =>

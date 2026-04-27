@@ -79,6 +79,7 @@
     "episodeSplitLlm": "Smart episode split",
     "assetHubAiDesignCharacter": "Asset hub character design",
     "assetHubAiDesignLocation": "Asset hub location design",
+    "assetHubAiDesignProp": "Asset hub prop design",
     "assetHubAiModifyCharacter": "Asset hub character modify",
     "assetHubAiModifyLocation": "Asset hub location modify",
     "assetHubAiModifyProp": "Asset hub prop modify",
