@@ -43,7 +43,7 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
       onClick={onClose}
       style={{ margin: 0, padding: 0 }}
     >
-      <div className="relative w-screen h-screen p-2 flex items-center justify-center">
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
@@ -67,8 +67,8 @@ export default function ImagePreviewModal({ imageUrl, onClose }: ImagePreviewMod
         <MediaImageWithLoading
           src={displayImageUrl}
           alt={t('preview')}
-          containerClassName="w-full h-full flex items-center justify-center"
-          className="max-w-[95vw] max-h-[92vh] object-contain rounded-2xl shadow-2xl"
+          containerClassName="flex items-center justify-center"
+          className="max-w-[98vw] max-h-[96vh] object-contain rounded-2xl shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         />
       </div>
