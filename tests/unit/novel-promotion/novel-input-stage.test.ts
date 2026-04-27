@@ -16,7 +16,7 @@ vi.mock('next-intl', () => ({
 vi.mock('@/components/story-input/StoryInputComposer', () => ({
   default: ({
     minRows,
-    maxHeightViewportRatio,
+    expandToFill,
     textareaClassName,
     topRight,
     footer,
@@ -24,7 +24,7 @@ vi.mock('@/components/story-input/StoryInputComposer', () => ({
     primaryAction,
   }: {
     minRows: number
-    maxHeightViewportRatio: number
+    expandToFill?: boolean
     textareaClassName?: string
     topRight?: React.ReactNode
     footer?: React.ReactNode
@@ -34,7 +34,7 @@ vi.mock('@/components/story-input/StoryInputComposer', () => ({
     'section',
     {
       'data-min-rows': String(minRows),
-      'data-max-height-ratio': String(maxHeightViewportRatio),
+      'data-expand-to-fill': String(expandToFill ?? false),
       'data-textarea-class': textareaClassName,
     },
     topRight,
@@ -73,7 +73,6 @@ describe('NovelInputStage', () => {
     const html = renderToStaticMarkup(
       createElement(NovelInputStage, {
         novelText: '',
-        episodeName: '剧集 1',
         onNovelTextChange: () => undefined,
         onNext: () => undefined,
       }),
@@ -81,7 +80,7 @@ describe('NovelInputStage', () => {
 
     expect(html).toContain('StoryInputComposer')
     expect(html).toContain('data-min-rows="8"')
-    expect(html).toContain('data-max-height-ratio="0.5"')
+    expect(html).toContain('data-expand-to-fill="true"')
     expect(html).toContain('data-textarea-class="px-0 pt-0 pb-3 align-top"')
     expect(html).toContain('aiWrite.trigger')
     expect(html).toContain('AiWriteModal')

@@ -14,6 +14,7 @@ interface NavItemData {
     href?: string  // 可选的链接地址
     disabled?: boolean  // 是否禁用（开发中）
     disabledLabel?: string  // 禁用时显示的提示文字
+    count?: number  // 统计数（如分段数、镜头数）
 }
 
 interface CapsuleNavProps {
@@ -22,6 +23,8 @@ interface CapsuleNavProps {
     onItemClick: (id: string) => void
     projectId?: string  // 用于构建链接
     episodeId?: string  // 用于构建链接
+    className?: string  // 外部容器 className
+    compact?: boolean   // 紧凑模式（类似 SegmentedControl 风格）
 }
 
 /**
@@ -35,7 +38,9 @@ function NavItem({
     status,
     href,
     disabled,
-    disabledLabel
+    disabledLabel,
+    count,
+    compact
 }: {
     active: boolean
     onClick: () => void
@@ -44,6 +49,8 @@ function NavItem({
     href?: string
     disabled?: boolean
     disabledLabel?: string
+    count?: number
+    compact?: boolean
 }) {
     const handleClick = (e: React.MouseEvent) => {
         if (disabled) return
@@ -71,7 +78,10 @@ function NavItem({
                 onAuxClick={handleAuxClick}
                 disabled={disabled}
                 className={`
-                    relative flex min-h-[52px] items-center gap-1 px-6 pt-3.5 pb-4 transition-all duration-300 ease-out
+                    relative flex items-center gap-1 transition-all duration-300 ease-out
+                    ${compact
+                        ? 'px-3 py-1.5 text-[13px]'
+                        : 'min-h-[52px] px-6 pt-3.5 pb-4'}
                     ${disabled
                         ? 'cursor-not-allowed'
                         : active
@@ -81,26 +91,31 @@ function NavItem({
                 `}
             >
                 {disabled ? (
-                    <span className="text-base font-medium text-[var(--glass-text-tertiary)] opacity-80">
-                        {label}
+                    <span className={`font-medium text-[var(--glass-text-tertiary)] opacity-80 ${compact ? 'text-[13px]' : 'text-base'}`}>
+                        {label}{count !== undefined ? <span className="text-xs ml-1 opacity-60">[{count}]</span> : ''}
                     </span>
                 ) : (
-                    <span className="text-base font-semibold">{label}</span>
+                    <span className={`font-semibold ${compact ? 'text-[13px]' : 'text-base'}`}>{label}{count !== undefined ? <span className="text-xs ml-1 text-[var(--glass-text-tertiary)]">[{count}]</span> : ''}</span>
                 )}
-                {/* 底部指示条 */}
-                <span className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 h-[3px] rounded-full transition-all duration-300 ease-out
-                    ${active
-                        ? 'w-6 bg-gradient-to-r from-[var(--glass-accent-from)] to-[var(--glass-accent-to)] shadow-[0_2px_8px_var(--glass-accent-shadow-soft)]'
-                        : 'w-0 bg-transparent'
-                    }`}
-                />
+                {/* 底部指示条 - 仅在非 compact 模式 */}
+                {!compact && (
+                    <span className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 h-[3px] rounded-full transition-all duration-300 ease-out
+                        ${active
+                            ? 'w-6 bg-gradient-to-r from-[var(--glass-accent-from)] to-[var(--glass-accent-to)] shadow-[0_2px_8px_var(--glass-accent-shadow-soft)]'
+                            : 'w-0 bg-transparent'
+                        }`}
+                    />
+                )}
                 {status === 'ready' && !disabled && (
-                    <span className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full transition-colors
+                    <span className={`rounded-full transition-colors
+                        ${compact ? 'w-1 h-1 ml-0.5' : 'absolute top-2 right-2 w-1.5 h-1.5'}
                         ${active ? 'bg-[var(--glass-tone-info-fg)]' : 'bg-[var(--glass-tone-success-fg)]'}`}
                     />
                 )}
                 {status === 'processing' && !disabled && (
-                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[var(--glass-accent-from)] animate-pulse" />
+                    <span className={`rounded-full bg-[var(--glass-accent-from)] animate-pulse
+                        ${compact ? 'w-1 h-1 ml-0.5' : 'absolute top-2 right-2 w-1.5 h-1.5'}`}
+                    />
                 )}
             </button>
             {disabled && disabledLabel && (
@@ -120,7 +135,7 @@ function NavItem({
  * CapsuleNav - 胶囊形态悬浮导航
  * 支持中键和Ctrl+点击在新标签页打开
  */
-export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId }: CapsuleNavProps) {
+export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId, className, compact }: CapsuleNavProps) {
     // 构建每个导航项的链接地址
     const buildHref = (stageId: string): string | undefined => {
         if (!projectId) return undefined
@@ -133,10 +148,10 @@ export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId 
     }
 
     return (
-        <nav className="fixed top-20 left-1/2 -translate-x-1/2 z-40 animate-fadeInDown">
+        <nav className={className}>
             <div
-                className="flex rounded-full px-2 py-1"
-                style={{
+                className={`flex rounded-full ${compact ? 'px-1 py-0.5 bg-[#e8e8ed] dark:bg-[#1c1c1e]' : 'px-2 py-1'}`}
+                style={compact ? {} : {
                     background: 'rgba(255,255,255,0.55)',
                     backdropFilter: 'blur(24px) saturate(1.6)',
                     WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
@@ -154,6 +169,8 @@ export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId 
                         href={buildHref(item.id)}
                         disabled={item.disabled}
                         disabledLabel={item.disabledLabel}
+                        count={item.count}
+                        compact={compact}
                     />
                 ))}
             </div>
@@ -167,6 +184,7 @@ export function CapsuleNav({ items, activeId, onItemClick, projectId, episodeId 
 interface Episode {
     id: string
     title: string
+    episodeNumber?: number
     summary?: string
     status?: {
         story?: StepStatus
@@ -183,6 +201,7 @@ interface EpisodeSelectorProps {
     onRename?: (id: string, newName: string) => void
     onDelete?: (id: string) => void
     projectName?: string  // 项目名称，显示在左上角
+    className?: string    // 外部容器 className
 }
 
 export function EpisodeSelector({
@@ -192,7 +211,8 @@ export function EpisodeSelector({
     onAdd,
     onRename,
     onDelete,
-    projectName
+    projectName,
+    className
 }: EpisodeSelectorProps) {
     const t = useTranslations('common')
     const [isOpen, setIsOpen] = useState(false)
@@ -215,20 +235,22 @@ export function EpisodeSelector({
     if (!currentEp) return null
 
     return (
-        <div className="fixed top-20 left-6 z-40" ref={menuRef}>
+        <div className={`relative ${className || ''}`} ref={menuRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="glass-btn-base glass-btn-secondary flex items-center gap-3 px-4 py-3 transition-all group"
+                className="glass-btn-base glass-btn-secondary flex items-center gap-2 px-3 py-1.5 transition-all group"
                 style={{ borderRadius: '1.5rem' }}
             >
-                <div className="glass-surface-soft flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold text-[var(--glass-tone-info-fg)]">
+                <div className="glass-surface-soft flex h-8 w-8 items-center justify-center rounded-xl text-xs font-bold text-[var(--glass-tone-info-fg)]">
                     {t('episode')}
                 </div>
-                <div className="flex flex-col items-start text-left mr-2">
-                    <span className="text-sm font-bold text-[var(--glass-text-primary)] line-clamp-1 max-w-[160px]">
-                        {projectName || t('project')}
-                    </span>
-                    <span className="text-sm text-[var(--glass-text-secondary)] line-clamp-1 max-w-[160px]">
+                <div className="flex items-center text-left mr-1 gap-1.5">
+                    {currentEp.episodeNumber != null && (
+                        <span className="text-sm font-semibold text-[var(--glass-text-primary)] whitespace-nowrap">
+                            剧集 {currentEp.episodeNumber}
+                        </span>
+                    )}
+                    <span className="text-sm text-[var(--glass-text-secondary)] truncate max-w-[140px]">
                         {currentEp.title}
                     </span>
                 </div>
@@ -236,7 +258,19 @@ export function EpisodeSelector({
             </button>
 
             {isOpen && (
-                <div className="glass-surface-modal absolute left-0 top-full mt-2 w-72 origin-top-left p-2 animate-fadeIn">
+                <div className="glass-surface-modal absolute left-0 top-full mt-2 origin-top-left p-2 animate-fadeIn z-50" style={{ minWidth: '18rem' }}>
+                    {/* 新建剧集按钮 - 置于顶部 */}
+                    {onAdd && (
+                        <>
+                            <button
+                                onClick={() => { onAdd(); setIsOpen(false); }}
+                                className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-[var(--glass-tone-info-fg)] hover:bg-[var(--glass-tone-info-bg)] font-medium text-sm transition-colors"
+                            >
+                                <span className="text-lg leading-none">+</span> {t('newEpisode')}
+                            </button>
+                            <div className="h-px bg-[var(--glass-bg-muted)] my-2" />
+                        </>
+                    )}
                     <div className="max-h-[300px] overflow-y-auto app-scrollbar space-y-1">
                         {episodes.map(ep => {
                             const statusColor = ep.status?.visual === 'ready'
@@ -327,7 +361,14 @@ export function EpisodeSelector({
                                     >
                                         <div className={`w-2 h-10 rounded-full ${statusColor}`} />
                                         <div className="flex-1">
-                                            <div className="font-bold text-[var(--glass-text-primary)] text-sm truncate">{ep.title}</div>
+                                            <div className="flex items-center gap-2">
+                                                {ep.episodeNumber != null && (
+                                                    <span className="text-xs font-bold text-[var(--glass-tone-info-fg)] bg-[var(--glass-tone-info-bg)] px-1.5 py-0.5 rounded-md shrink-0">
+                                                        #{ep.episodeNumber}
+                                                    </span>
+                                                )}
+                                                <div className="font-bold text-[var(--glass-text-primary)] text-sm truncate">{ep.title}</div>
+                                            </div>
                                             {ep.summary && (
                                                 <div className="text-xs text-[var(--glass-text-tertiary)] truncate">{ep.summary}</div>
                                             )}
@@ -367,17 +408,6 @@ export function EpisodeSelector({
                             )
                         })}
                     </div>
-                    {onAdd && (
-                        <>
-                            <div className="h-px bg-[var(--glass-bg-muted)] my-2 mx-2" />
-                            <button
-                                onClick={() => { onAdd(); setIsOpen(false); }}
-                                className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-[var(--glass-text-tertiary)] hover:text-[var(--glass-tone-info-fg)] hover:bg-[var(--glass-tone-info-bg)] font-medium text-sm transition-colors"
-                            >
-                                <span className="text-lg">+</span> {t('newEpisode')}
-                            </button>
-                        </>
-                    )}
                 </div>
             )}
         </div>

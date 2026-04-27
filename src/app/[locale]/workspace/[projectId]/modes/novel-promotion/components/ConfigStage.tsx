@@ -53,14 +53,9 @@ export default function ConfigStage() {
   return (
     <NovelInputStage
       novelText={novelText}
-      episodeName={episodeName}
       onNovelTextChange={runtime.onNovelTextChange}
       isSubmittingTask={runtime.isSubmittingTTS || runtime.isStartingStoryToScript}
       isSwitchingStage={runtime.isTransitioning}
-      videoRatio={runtime.videoRatio ?? undefined}
-      artStyle={runtime.artStyle ?? undefined}
-      onVideoRatioChange={runtime.onVideoRatioChange}
-      onArtStyleChange={runtime.onArtStyleChange}
       onNext={runtime.onRunStoryToScript}
       onSmartSplit={handleSmartSplit}
     />

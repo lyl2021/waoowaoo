@@ -2,7 +2,7 @@
 
 /**
  * 小说推文模式 - 故事输入阶段 (Story View)
- * V3.2 UI: 极简版，专注剧本输入，资产管理移至资产库
+ * V3.3 UI: 极简专注编辑，按钮内嵌，支持单栏/双栏切换
  */
 
 import { useTranslations } from 'next-intl'
@@ -11,11 +11,9 @@ import '@/styles/animations.css'
 import AiWriteModal from '@/components/home/AiWriteModal'
 import LongTextDetectionPrompt from '@/components/story-input/LongTextDetectionPrompt'
 import StoryInputComposer from '@/components/story-input/StoryInputComposer'
-import { ART_STYLES, ART_STYLE_CATEGORIES, VIDEO_RATIOS } from '@/lib/constants'
 import TaskStatusInline from '@/components/task/TaskStatusInline'
 import { resolveTaskPresentationState } from '@/lib/task/presentation'
 import { AppIcon } from '@/components/ui/icons'
-import { DEFAULT_STYLE_PRESET_VALUE, STYLE_PRESETS } from '@/lib/style-presets'
 import { PROJECT_STORY_INPUT_MIN_ROWS } from '@/lib/ui/textarea-height'
 import { apiFetch } from '@/lib/api-fetch'
 import { expandHomeStory } from '@/lib/home/ai-story-expand'
@@ -23,13 +21,9 @@ import { expandHomeStory } from '@/lib/home/ai-story-expand'
 /** 触发智能分集建议的字数阈值 */
 const LONG_TEXT_THRESHOLD = 1000
 
-
-
 interface NovelInputStageProps {
   // 核心数据
   novelText: string
-  // 当前剧集名称
-  episodeName?: string
   // 回调函数
   onNovelTextChange: (value: string) => void
   onNext: () => void
@@ -41,16 +35,10 @@ interface NovelInputStageProps {
   // 旁白开关
   enableNarration?: boolean
   onEnableNarrationChange?: (enabled: boolean) => void
-  // 配置项 - 比例与风格
-  videoRatio?: string
-  artStyle?: string
-  onVideoRatioChange?: (value: string) => void
-  onArtStyleChange?: (value: string) => void
 }
 
 export default function NovelInputStage({
   novelText,
-  episodeName,
   onNovelTextChange,
   onNext,
   onSmartSplit,
@@ -58,24 +46,16 @@ export default function NovelInputStage({
   isSwitchingStage = false,
   enableNarration = false,
   onEnableNarrationChange,
-  videoRatio = '9:16',
-  artStyle = 'american-comic',
-  onVideoRatioChange,
-  onArtStyleChange
 }: NovelInputStageProps) {
   const t = useTranslations('novelPromotion')
   const homeT = useTranslations('home')
 
   // ── IME 组合输入处理 ──
-  // 中文/日文/韩文输入法在组合（composing）期间会持续触发 onChange，
-  // 如果此时同步到父组件（触发 API 请求 + React Query invalidation），
-  // 服务端返回的旧数据会覆盖当前输入，导致拼音跳动。
-  // 解决方案：组合期间仅更新本地 state，组合结束后再同步到父组件。
   const isComposingRef = useRef(false)
   const [localText, setLocalText] = useState(novelText)
-  const [stylePresetValue, setStylePresetValue] = useState<string>(DEFAULT_STYLE_PRESET_VALUE)
   const [aiWriteOpen, setAiWriteOpen] = useState(false)
   const [aiWriteLoading, setAiWriteLoading] = useState(false)
+  const [viewMode, setViewMode] = useState<'single' | 'split'>('single')
 
   // 当父组件的 novelText 变化（非本地编辑触发）时，同步到本地 state
   useEffect(() => {
@@ -90,7 +70,6 @@ export default function NovelInputStage({
 
   const handleCompositionEnd = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
     isComposingRef.current = false
-    // 组合结束，将最终文本同步到父组件
     onNovelTextChange(e.currentTarget.value)
   }
 
@@ -127,22 +106,9 @@ export default function NovelInputStage({
     }
   }, [aiWriteLoading, onNovelTextChange])
 
-  // 下拉中使用的简短标签（低信息密度）
-  const ratioUsageTagMap: Record<string, string> = {
-    '1:1': t('storyInput.ratioUsageTag.1_1'),
-    '9:16': t('storyInput.ratioUsageTag.9_16'),
-    '16:9': t('storyInput.ratioUsageTag.16_9'),
-    '4:3': t('storyInput.ratioUsageTag.4_3'),
-    '3:4': t('storyInput.ratioUsageTag.3_4'),
-    '2:3': t('storyInput.ratioUsageTag.2_3'),
-    '3:2': t('storyInput.ratioUsageTag.3_2'),
-    '4:5': t('storyInput.ratioUsageTag.4_5'),
-    '5:4': t('storyInput.ratioUsageTag.5_4'),
-    '21:9': t('storyInput.ratioUsageTag.21_9'),
+  const handleToggleViewMode = () => {
+    setViewMode((v) => (v === 'single' ? 'split' : 'single'))
   }
-
-  const getRatioUsageTag = (ratio: string): string =>
-    ratioUsageTagMap[ratio] ?? ''
 
   const stageSwitchingState = isSwitchingStage
     ? resolveTaskPresentationState({
@@ -154,20 +120,10 @@ export default function NovelInputStage({
     : null
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5">
+    <div className="max-w-5xl mx-auto flex flex-col min-h-full gap-4">
 
-      {/* 当前编辑剧集提示 - 顶部居中醒目显示 */}
-      {episodeName && (
-        <div className="text-center py-1">
-          <div className="text-lg font-semibold text-[var(--glass-text-primary)]">
-            {t("storyInput.currentEditing", { name: episodeName })}
-          </div>
-          <div className="text-sm text-[var(--glass-text-tertiary)] mt-1">{t("storyInput.editingTip")}</div>
-        </div>
-      )}
-
-      {/* 主输入区域（含底部工具栏） */}
-      <div className="relative z-10">
+      {/* 主输入区域 - 填满剩余空间 */}
+      <div className="relative flex-1 flex flex-col min-h-0">
         <StoryInputComposer
           value={localText}
           onValueChange={(value) => {
@@ -180,63 +136,67 @@ export default function NovelInputStage({
           onCompositionEnd={handleCompositionEnd}
           placeholder={`请输入您的剧本或小说内容...\n\nAI 将根据您的文本智能分析：\n• 自动识别场景切换\n• 提取角色对话和动作\n• 生成分镜脚本\n\n例如：\n清晨，阳光透过窗帘洒进房间。小明揉着惺忪的睡眼从床上坐起，看了一眼床头的闹钟——已经八点了！他猛地跳下床，手忙脚乱地开始穿衣服...`}
           minRows={PROJECT_STORY_INPUT_MIN_ROWS}
-          maxHeightViewportRatio={0.5}
+          expandToFill
           disabled={isSubmittingTask || isSwitchingStage}
-          videoRatio={videoRatio}
-          onVideoRatioChange={(value) => onVideoRatioChange?.(value)}
-          ratioOptions={VIDEO_RATIOS.map((option) => ({
-            ...option,
-            recommended: option.value === '9:16'
-          }))}
-          getRatioUsage={getRatioUsageTag}
-          artStyle={artStyle}
-          onArtStyleChange={(value) => onArtStyleChange?.(value)}
-          styleOptions={ART_STYLES.map((option) => ({
-            ...option,
-            recommended: option.value === 'realistic'
-          }))}
-          styleCategories={ART_STYLE_CATEGORIES}
-          stylePresetValue={stylePresetValue}
-          onStylePresetChange={setStylePresetValue}
-          stylePresetOptions={STYLE_PRESETS}
           textareaClassName="px-0 pt-0 pb-3 align-top"
-          primaryAction={(
+          viewMode={viewMode}
+          secondaryActions={
+            <div className="flex items-center gap-1">
+              {/* 单栏/双栏切换 */}
+              <button
+                onClick={handleToggleViewMode}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+                  viewMode === 'split'
+                    ? 'text-[var(--glass-tone-info-fg)] bg-[var(--glass-tone-info-bg)]'
+                    : 'text-[var(--glass-text-tertiary)] hover:text-[var(--glass-text-secondary)]'
+                }`}
+                title={viewMode === 'split' ? '单栏展示' : '双栏展示'}
+              >
+                <AppIcon name="file" className="w-4 h-4" />
+                {viewMode === 'split' && (
+                  <span className="font-medium">双栏</span>
+                )}
+              </button>
+
+              {/* AI 帮我写 */}
+              <button
+                onClick={() => setAiWriteOpen(true)}
+                disabled={isSubmittingTask || isSwitchingStage}
+                className="glass-btn-base flex h-8 items-center gap-1 border border-[var(--glass-stroke-strong)] px-2.5 text-xs transition-all hover:border-[var(--glass-tone-info-fg)]/40"
+              >
+                <AppIcon name="sparkles" className="w-3.5 h-3.5 text-[#7c3aed]" />
+                <span
+                  className="font-medium text-xs"
+                  style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #7c3aed)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {homeT('aiWrite.trigger')}
+                </span>
+              </button>
+            </div>
+          }
+          primaryAction={
             <button
               onClick={handleStartClick}
               disabled={!hasContent || isSubmittingTask || isSwitchingStage}
-              className="glass-btn-base glass-btn-primary h-10 flex-shrink-0 px-5 text-sm disabled:opacity-50 flex items-center gap-2"
+              className="glass-btn-base glass-btn-primary h-8 px-3 text-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               {isSwitchingStage ? (
                 <TaskStatusInline state={stageSwitchingState} className="text-white [&>span]:text-white [&_svg]:text-white" />
               ) : (
                 <>
                   <span>{t("smartImport.manualCreate.button")}</span>
-                  <AppIcon name="arrowRight" className="w-4 h-4" />
+                  <AppIcon name="arrowRight" className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
-          )}
-          secondaryActions={(
-            <button
-              onClick={() => setAiWriteOpen(true)}
-              disabled={isSubmittingTask || isSwitchingStage}
-              className="glass-btn-base flex h-10 flex-shrink-0 items-center gap-1.5 border border-[var(--glass-stroke-strong)] px-3 text-sm transition-all hover:border-[var(--glass-tone-info-fg)]/40"
-            >
-              <AppIcon name="sparkles" className="w-4 h-4 text-[#7c3aed]" />
-              <span
-                className="font-medium"
-                style={{
-                  background: 'linear-gradient(135deg, #3b82f6, #7c3aed)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                {homeT('aiWrite.trigger')}
-              </span>
-            </button>
-          )}
+          }
         />
       </div>
+
       <AiWriteModal
         open={aiWriteOpen}
         loading={aiWriteLoading}
@@ -244,21 +204,6 @@ export default function NovelInputStage({
         onStart={(prompt) => void handleAiWriteStart(prompt)}
         t={(key: string) => homeT(`aiWrite.${key}`)}
       />
-
-      {/* 资产库引导提示 */}
-      <div className="glass-surface p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 glass-surface-soft rounded-xl flex items-center justify-center flex-shrink-0">
-            <AppIcon name="folderCards" className="w-5 h-5 text-[var(--glass-text-secondary)]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-[var(--glass-text-secondary)] mb-1">{t("storyInput.assetLibraryTip.title")}</div>
-            <p className="text-sm text-[var(--glass-text-tertiary)] leading-relaxed">
-              {t("storyInput.assetLibraryTip.description")}
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* 旁白开关 */}
       {onEnableNarrationChange && (

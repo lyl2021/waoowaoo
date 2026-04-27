@@ -32,21 +32,23 @@ interface StoryInputComposerProps {
   topRight?: ReactNode
   footer?: ReactNode
   secondaryActions?: ReactNode
-  primaryAction: ReactNode
-  videoRatio: string
-  onVideoRatioChange: (value: string) => void
-  ratioOptions: StoryInputComposerOption[]
+  primaryAction?: ReactNode
+  videoRatio?: string
+  onVideoRatioChange?: (value: string) => void
+  ratioOptions?: StoryInputComposerOption[]
   getRatioUsage?: (ratio: string) => string
-  artStyle: string
-  onArtStyleChange: (value: string) => void
-  styleOptions: StoryInputComposerOption[]
+  artStyle?: string
+  onArtStyleChange?: (value: string) => void
+  styleOptions?: StoryInputComposerOption[]
   styleCategories?: StoryInputComposerStyleCategory[]
-  stylePresetValue: string
-  onStylePresetChange: (value: string) => void
-  stylePresetOptions: readonly StoryInputComposerStylePresetOption[]
+  stylePresetValue?: string
+  onStylePresetChange?: (value: string) => void
+  stylePresetOptions?: readonly StoryInputComposerStylePresetOption[]
   onCompositionStart?: () => void
   onCompositionEnd?: (event: CompositionEvent<HTMLTextAreaElement>) => void
   textareaClassName?: string
+  viewMode?: 'single' | 'split'
+  expandToFill?: boolean
 }
 
 export default function StoryInputComposer({
@@ -74,9 +76,12 @@ export default function StoryInputComposer({
   onCompositionStart,
   onCompositionEnd,
   textareaClassName,
+  viewMode = 'single',
+  expandToFill = false,
 }: StoryInputComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const textareaMinHeightRef = useRef<number | null>(null)
+  const splitIndexRef = useRef(0)
 
   const autoResizeTextarea = useCallback(() => {
     const el = textareaRef.current
@@ -112,64 +117,137 @@ export default function StoryInputComposer({
   }, [maxHeightViewportRatio])
 
   useEffect(() => {
-    autoResizeTextarea()
-  }, [value, autoResizeTextarea])
+    if (!expandToFill) {
+      autoResizeTextarea()
+    }
+  }, [value, autoResizeTextarea, expandToFill])
+
+  // 进入 split 模式时计算文本分割点
+  useEffect(() => {
+    if (viewMode === 'split') {
+      const mid = Math.floor(value.length / 2)
+      const beforeNewline = value.lastIndexOf('\n', mid)
+      const afterNewline = value.indexOf('\n', mid)
+      let splitIndex = mid
+      const beforeDist = beforeNewline !== -1 ? mid - beforeNewline : Infinity
+      const afterDist = afterNewline !== -1 ? afterNewline - mid : Infinity
+      if (beforeDist <= afterDist && beforeDist < 200) {
+        splitIndex = beforeNewline + 1
+      } else if (afterDist < beforeDist && afterDist < 200) {
+        splitIndex = afterNewline + 1
+      }
+      splitIndexRef.current = splitIndex
+    }
+  }, [viewMode])
 
   return (
-    <div className="relative w-full glass-surface-elevated rounded-2xl">
-      <div className="p-6 pb-4">
-        {topRight && (
-          <div className="mb-3 flex items-center justify-end">
-            {topRight}
-          </div>
-        )}
-
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(event) => onValueChange(event.target.value)}
-          onCompositionStart={onCompositionStart}
-          onCompositionEnd={onCompositionEnd}
-          placeholder={placeholder}
-          rows={minRows}
-          disabled={disabled}
-          className={`w-full resize-none border-none bg-transparent text-base text-[var(--glass-text-primary)] outline-none placeholder:text-[var(--glass-text-tertiary)] app-scrollbar ${textareaClassName ?? 'p-5 pb-3'}`}
-        />
-      </div>
-
-      <div className="flex items-center gap-2 overflow-x-auto px-5 pb-4">
-        <div className="flex min-w-max flex-1 items-center gap-2">
-          <div className="w-[118px] flex-shrink-0">
-            <RatioSelector
-              value={videoRatio}
-              onChange={onVideoRatioChange}
-              options={ratioOptions}
-              getUsage={getRatioUsage}
-            />
-          </div>
-          <div className="w-[132px] flex-shrink-0">
-            <StyleSelector
-              value={artStyle}
-              onChange={onArtStyleChange}
-              options={styleOptions}
-              categories={styleCategories}
-            />
-          </div>
-          {stylePresetOptions.length > 0 ? (
-            <div className="w-[152px] flex-shrink-0">
-              <StylePresetSelector
-                value={stylePresetValue}
-                onChange={onStylePresetChange}
-                options={stylePresetOptions}
+    <div className={`relative w-full glass-surface-elevated rounded-2xl${expandToFill ? ' flex-1 flex flex-col min-h-0' : ''}`}>
+      {/* 顶部：选择器工具栏（有选项时才渲染） */}
+      {ratioOptions && ratioOptions.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto px-5 pt-4 pb-2 border-b border-[var(--glass-stroke-soft)]/50">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-[118px] flex-shrink-0">
+              <RatioSelector
+                value={videoRatio ?? ''}
+                onChange={onVideoRatioChange ?? (() => {})}
+                options={ratioOptions}
+                getUsage={getRatioUsage}
               />
             </div>
-          ) : null}
+            <div className="w-[132px] flex-shrink-0">
+              <StyleSelector
+                value={artStyle ?? ''}
+                onChange={onArtStyleChange ?? (() => {})}
+                options={styleOptions ?? []}
+                categories={styleCategories}
+              />
+            </div>
+            {stylePresetOptions && stylePresetOptions.length > 0 ? (
+              <div className="w-[152px] flex-shrink-0">
+                <StylePresetSelector
+                  value={stylePresetValue ?? ''}
+                  onChange={onStylePresetChange ?? (() => {})}
+                  options={stylePresetOptions}
+                />
+              </div>
+            ) : null}
+          </div>
+          {topRight && (
+            <div className="flex items-center flex-shrink-0">
+              {topRight}
+            </div>
+          )}
         </div>
-        <div className="ml-auto flex min-w-max items-center gap-2">
+      )}
+
+      {/* 中间：输入区域 */}
+      {viewMode === 'split' ? (
+        <div className={`flex ${expandToFill ? 'flex-1 min-h-0' : 'min-h-[200px]'}`}>
+          <div className={`flex-1 min-w-0 border-r border-[var(--glass-stroke-soft)]/50 ${expandToFill ? 'flex flex-col min-h-0' : ''}`}>
+            <textarea
+              value={value.slice(0, splitIndexRef.current)}
+              onChange={(e) => {
+                onValueChange(e.target.value + value.slice(splitIndexRef.current))
+              }}
+              onCompositionStart={onCompositionStart}
+              onCompositionEnd={onCompositionEnd}
+              placeholder={placeholder}
+              rows={minRows}
+              disabled={disabled}
+              className={`w-full resize-none border-none bg-transparent text-base text-[var(--glass-text-primary)] outline-none placeholder:text-[var(--glass-text-tertiary)] app-scrollbar p-5${expandToFill ? ' flex-1 overflow-y-auto' : ''}`}
+            />
+          </div>
+          <div className={`flex-1 min-w-0 ${expandToFill ? 'flex flex-col min-h-0' : ''}`}>
+            <textarea
+              value={value.slice(splitIndexRef.current)}
+              onChange={(e) => {
+                onValueChange(value.slice(0, splitIndexRef.current) + e.target.value)
+              }}
+              onCompositionStart={onCompositionStart}
+              onCompositionEnd={onCompositionEnd}
+              placeholder={placeholder}
+              rows={minRows}
+              disabled={disabled}
+              className={`w-full resize-none border-none bg-transparent text-base text-[var(--glass-text-primary)] outline-none placeholder:text-[var(--glass-text-tertiary)] app-scrollbar p-5${expandToFill ? ' flex-1 overflow-y-auto' : ''}`}
+            />
+          </div>
+        </div>
+      ) : expandToFill ? (
+        <div className="flex-1 flex flex-col min-h-0 p-5">
+          <textarea
+            value={value}
+            onChange={(event) => onValueChange(event.target.value)}
+            onCompositionStart={onCompositionStart}
+            onCompositionEnd={onCompositionEnd}
+            placeholder={placeholder}
+            rows={minRows}
+            disabled={disabled}
+            className={`w-full resize-none border-none bg-transparent text-base text-[var(--glass-text-primary)] outline-none placeholder:text-[var(--glass-text-tertiary)] app-scrollbar flex-1 overflow-y-auto ${textareaClassName ?? ''}`}
+          />
+        </div>
+      ) : (
+        <div className="p-5">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(event) => onValueChange(event.target.value)}
+            onCompositionStart={onCompositionStart}
+            onCompositionEnd={onCompositionEnd}
+            placeholder={placeholder}
+            rows={minRows}
+            disabled={disabled}
+            className={`w-full resize-none border-none bg-transparent text-base text-[var(--glass-text-primary)] outline-none placeholder:text-[var(--glass-text-tertiary)] app-scrollbar ${textareaClassName ?? ''}`}
+          />
+        </div>
+      )}
+
+      {/* 底部：操作按钮 */}
+      {(secondaryActions || primaryAction) && (
+        <div className="flex items-center justify-end gap-2 px-5 pb-4">
           {secondaryActions}
           {primaryAction}
         </div>
-      </div>
+      )}
 
       {footer && (
         <div className="px-6 pb-4">
