@@ -1,6 +1,6 @@
 import { createScopedLogger } from '@/lib/logging/core'
 import { prisma } from '@/lib/prisma'
-import { addTaskJob } from '@/lib/task/queues'
+import { addTaskJob, removeTaskJob } from '@/lib/task/queues'
 import { resolveTaskLocaleFromBody } from '@/lib/task/resolve-locale'
 import { markTaskFailed } from '@/lib/task/service'
 import { publishTaskEvent } from '@/lib/task/publisher'
@@ -9,6 +9,10 @@ import { cleanupAllProjectLogs } from '@/lib/logging/file-writer'
 
 const INTERVAL_MS = Number.parseInt(process.env.WATCHDOG_INTERVAL_MS || '30000', 10) || 30000
 const HEARTBEAT_TIMEOUT_MS = Number.parseInt(process.env.TASK_HEARTBEAT_TIMEOUT_MS || '90000', 10) || 90000
+/** 已入队但未被 worker 消费的超时阈值（30 分钟） */
+const STALE_QUEUED_TIMEOUT_MS = Number.parseInt(process.env.STALE_QUEUED_TIMEOUT_MS || '1800000', 10) || 1800000
+/** 重新入队最大尝试次数，超过后标记为 failed */
+const MAX_REENQUEUE_ATTEMPTS = 3
 const TASK_TYPE_SET: ReadonlySet<string> = new Set(Object.values(TASK_TYPE))
 // 每小时执行一次日志清理
 const LOG_CLEANUP_INTERVAL_TICKS = Math.ceil(3600_000 / INTERVAL_MS)
@@ -184,12 +188,80 @@ async function cleanupZombieProcessingTasks() {
   }
 }
 
+/**
+ * 检测已入队但长时间未被 worker 消费的 queued 任务。
+ * 场景：BullMQ job 丢失、worker 崩溃未恢复、队列阻塞等。
+ * 处理：重置 enqueuedAt 让 recoverQueuedTasks 重新入队；超过最大重试次数则标记失败。
+ */
+async function cleanupStaleQueuedTasks() {
+  const staleThreshold = new Date(Date.now() - STALE_QUEUED_TIMEOUT_MS)
+  const rows = await prisma.task.findMany({
+    where: {
+      status: 'queued',
+      enqueuedAt: { not: null, lt: staleThreshold },
+    },
+    take: 100,
+    orderBy: { createdAt: 'asc' },
+  })
+
+  for (const task of rows) {
+    if ((task.enqueueAttempts || 0) >= MAX_REENQUEUE_ATTEMPTS) {
+      await markTaskFailed(task.id, 'WATCHDOG_STALE_QUEUED', 'Task stuck in queued state after multiple re-enqueue attempts')
+      await publishTaskEvent({
+        taskId: task.id,
+        projectId: task.projectId,
+        userId: task.userId,
+        type: TASK_EVENT_TYPE.FAILED,
+        payload: { reason: 'watchdog_stale_queued' },
+      })
+      logger.error({
+        action: 'watchdog.fail_stale_queued',
+        message: 'watchdog marked stale queued task as failed after max re-enqueue attempts',
+        taskId: task.id,
+        projectId: task.projectId,
+        userId: task.userId,
+        errorCode: 'WATCHDOG_STALE_QUEUED',
+        retryable: false,
+      })
+      continue
+    }
+
+    // 清理 BullMQ 中可能残留的旧 job
+    try {
+      await removeTaskJob(task.id)
+    } catch {
+      // job 不存在等情况，继续
+    }
+
+    // 重置 enqueuedAt 为 null，让 recoverQueuedTasks 在下次 tick 重新入队
+    await prisma.task.update({
+      where: { id: task.id },
+      data: {
+        enqueuedAt: null,
+      },
+    })
+    logger.warn({
+      action: 'watchdog.reset_stale_queued',
+      message: 'watchdog reset stale queued task for re-enqueue',
+      taskId: task.id,
+      projectId: task.projectId,
+      userId: task.userId,
+      details: {
+        enqueueAttempts: task.enqueueAttempts,
+        enqueuedAt: task.enqueuedAt?.toISOString(),
+      },
+      retryable: true,
+    })
+  }
+}
+
 async function tick() {
   tickCount++
   const startedAt = Date.now()
   try {
     await recoverQueuedTasks()
     await cleanupZombieProcessingTasks()
+    await cleanupStaleQueuedTasks()
     // 每小时清理一次日志（过滤 24h 前内容）
     if (tickCount % LOG_CLEANUP_INTERVAL_TICKS === 0) {
       void cleanupAllProjectLogs()

@@ -33,7 +33,7 @@ export interface LocationEditModalProps {
     descriptionIndex?: number
     isTaskRunning?: boolean
     onClose: () => void
-    onSave: (locationId: string) => void
+    onSave: (locationId: string, artStyle?: string) => void
     onUpdate?: (newDescription: string) => void
     onNameUpdate?: (newName: string) => void
     onRefresh?: () => void
@@ -250,7 +250,7 @@ export function LocationEditModal({
                 await persistArtStyleIfNeeded()
                 onUpdate?.(savedDescription)
                 onRefresh?.()
-                onSave(locationId)
+                onSave(locationId, editingArtStyle)
             } catch (error: unknown) {
                 if (shouldShowError(error)) {
                     alert(getErrorMessage(error, t('errors.saveFailed')))

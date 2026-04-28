@@ -376,14 +376,14 @@ export default function AssetHubPage() {
     }
 
     // 角色编辑后触发生成
-    const handleCharacterEditGenerate = async () => {
+    const handleCharacterEditGenerate = async (_characterId?: string, _appearanceKey?: string, updatedArtStyle?: string) => {
         if (!characterEditModal) return
 
         try {
             await characterActions.generate({
                 id: characterEditModal.characterId,
                 appearanceIndex: characterEditModal.appearanceIndex,
-                artStyle: characterEditModal.artStyle || undefined,
+                artStyle: updatedArtStyle || characterEditModal.artStyle || undefined,
                 count: characterGenerationCount,
             })
             queryClient.invalidateQueries({ queryKey: queryKeys.globalAssets.characters() })
@@ -393,13 +393,13 @@ export default function AssetHubPage() {
     }
 
     // 场景编辑后触发生成
-    const handleLocationEditGenerate = async () => {
+    const handleLocationEditGenerate = async (_locationId?: string, updatedArtStyle?: string) => {
         if (!locationEditModal) return
 
         try {
             await locationActions.generate({
                 id: locationEditModal.locationId,
-                artStyle: locationEditModal.artStyle || undefined,
+                artStyle: updatedArtStyle || locationEditModal.artStyle || undefined,
                 count: locationGenerationCount,
             })
             queryClient.invalidateQueries({ queryKey: queryKeys.globalAssets.locations() })

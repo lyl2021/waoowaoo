@@ -35,7 +35,7 @@ export interface CharacterEditModalProps {
     isTaskRunning?: boolean
     introduction?: string | null
     onClose: () => void
-    onSave: (characterId: string, appearanceId: string) => void
+    onSave: (characterId: string, appearanceId: string, artStyle?: string) => void
     onUpdate?: (newDescription: string) => void
     onIntroductionUpdate?: (newIntroduction: string) => void
     onNameUpdate?: (newName: string) => void
@@ -275,7 +275,7 @@ export function CharacterEditModal({
 
                 onUpdate?.(savedDescription)
                 onRefresh?.()
-                onSave(characterId, savedAppearanceKey)
+                onSave(characterId, savedAppearanceKey, editingArtStyle)
             } catch (error: unknown) {
                 if (shouldShowError(error)) {
                     alert(getErrorMessage(error, t('errors.saveFailed')))
