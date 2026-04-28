@@ -11,7 +11,19 @@
 - [src/lib/openai-compat-media-template.ts](file://src/lib/openai-compat-media-template.ts)
 - [src/lib/user-api/model-template/validator.ts](file://src/lib/user-api/model-template/validator.ts)
 - [src/lib/env.ts](file://src/lib/env.ts)
+- [lib/prompts/proxy.ts](file://lib/prompts/proxy.ts)
+- [src/lib/generators/image/gemini-compatible.ts](file://src/lib/generators/image/gemini-compatible.ts)
+- [src/lib/generators/image/google.ts](file://src/lib/generators/image/google.ts)
+- [src/lib/model-gateway/llm.ts](file://src/lib/model-gateway/llm.ts)
+- [src/lib/user-api/provider-test.ts](file://src/lib/user-api/provider-test.ts)
 </cite>
+
+## 更新摘要
+**所做更改**
+- 新增代理配置支持多种环境变量格式的章节
+- 更新网络兼容性相关的内容
+- 增强代理配置在不同组件中的应用说明
+- 补充环境变量兼容性的最佳实践
 
 ## 目录
 1. [简介](#简介)
@@ -28,6 +40,8 @@
 ## 简介
 本技术文档面向Waoowaoo的API配置管理系统，系统性阐述API密钥管理、模型配置与提供商设置的实现机制，覆盖配置验证、合同检查、动态加载、模板系统、默认值管理与继承、配置更新与热重载、版本控制、安全与权限控制、审计日志、多租户与环境隔离、A/B测试支持，以及最佳实践、故障排查与性能优化建议。
 
+**更新** 新增代理配置支持多种环境变量格式的功能，显著提升网络兼容性和部署灵活性。
+
 ## 项目结构
 围绕配置管理的关键模块分布如下：
 - 配置读取与解析：api-config.ts
@@ -37,6 +51,7 @@
 - 开放接口兼容媒体模板：openai-compat-media-template.ts、user-api/model-template/validator.ts
 - 安全与加密：crypto-utils.ts
 - 环境配置工具：env.ts
+- **新增** 代理配置支持：lib/prompts/proxy.ts
 
 ```mermaid
 graph TB
@@ -56,6 +71,7 @@ H["crypto-utils.ts<br/>API Key加解密"]
 end
 subgraph "运行时支撑"
 I["env.ts<br/>环境URL工具"]
+J["proxy.ts<br/>代理配置支持"]
 end
 A --> H
 B --> C
@@ -64,6 +80,8 @@ D --> E
 A --> F
 F --> G
 B --> I
+J --> A
+J --> B
 ```
 
 **图表来源**
@@ -76,6 +94,7 @@ B --> I
 - [src/lib/user-api/model-template/validator.ts:1-70](file://src/lib/user-api/model-template/validator.ts#L1-L70)
 - [src/lib/crypto-utils.ts:1-195](file://src/lib/crypto-utils.ts#L1-L195)
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
 
 **章节来源**
 - [src/lib/api-config.ts:1-509](file://src/lib/api-config.ts#L1-L509)
@@ -87,6 +106,7 @@ B --> I
 - [src/lib/user-api/model-template/validator.ts:1-70](file://src/lib/user-api/model-template/validator.ts#L1-L70)
 - [src/lib/crypto-utils.ts:1-195](file://src/lib/crypto-utils.ts#L1-L195)
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
 
 ## 核心组件
 - API配置读取器（严格模式）：负责从用户偏好中读取自定义模型与提供商配置，执行严格解析与校验，保证provider::modelId复合键规范，禁止猜测与默认降级。
@@ -96,6 +116,7 @@ B --> I
 - 开放接口兼容媒体模板：定义图像/视频生成的请求/响应模板，配合校验器保障路径与内容合法。
 - 安全与加密：基于PBKDF2派生密钥，AES-256-GCM加密存储API Key，支持批量加解密与容错处理。
 - 环境配置工具：集中管理应用内外部访问基础URL，便于内部服务间调用与API拼接。
+- **新增** 代理配置支持：统一管理HTTP/HTTPS代理配置，支持多种环境变量格式，提升网络兼容性。
 
 **章节来源**
 - [src/lib/api-config.ts:1-509](file://src/lib/api-config.ts#L1-L509)
@@ -107,24 +128,29 @@ B --> I
 - [src/lib/user-api/model-template/validator.ts:1-70](file://src/lib/user-api/model-template/validator.ts#L1-L70)
 - [src/lib/crypto-utils.ts:1-195](file://src/lib/crypto-utils.ts#L1-L195)
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
 
 ## 架构总览
-系统采用“严格配置读取 + 统一服务聚合 + 契约驱动能力 + 模板化媒体接口 + 加密存储”的架构，确保：
+系统采用"严格配置读取 + 统一服务聚合 + 契约驱动能力 + 模板化媒体接口 + 加密存储 + 代理配置"的架构，确保：
 - 数据来源一致、配置不可猜测、默认降级被禁用；
 - 能力选项可验证、可继承、可覆盖；
 - 模板路径与响应映射可校验、可扩展；
 - 密钥安全存储与解密，支持批量处理；
-- 项目级与用户级配置优先级明确，便于多租户与环境隔离。
+- 项目级与用户级配置优先级明确，便于多租户与环境隔离；
+- **新增** 代理配置支持多种环境变量格式，提升网络兼容性。
 
 ```mermaid
 sequenceDiagram
 participant Caller as "调用方"
 participant API as "api-config.ts"
 participant CS as "config-service.ts"
+participant Proxy as "proxy.ts"
 participant Cat as "catalog.ts"
 participant Lookup as "lookup.ts"
 participant Crypto as "crypto-utils.ts"
 Caller->>API : "解析模型选择(用户ID, model_key, 类型)"
+API->>Proxy : "设置代理配置"
+Proxy-->>API : "代理已配置"
 API->>API : "严格解析model_key(provider : : modelId)"
 API->>API : "读取用户自定义模型/提供商"
 API-->>Caller : "返回ModelSelection(含provider/modelId/modelKey)"
@@ -146,6 +172,7 @@ API-->>Caller : "返回ProviderConfig(含baseUrl/apiMode)"
 - [src/lib/model-capabilities/catalog.ts:169-219](file://src/lib/model-capabilities/catalog.ts#L169-L219)
 - [src/lib/model-capabilities/lookup.ts:249-353](file://src/lib/model-capabilities/lookup.ts#L249-L353)
 - [src/lib/crypto-utils.ts:85-111](file://src/lib/crypto-utils.ts#L85-L111)
+- [lib/prompts/proxy.ts:2-12](file://lib/prompts/proxy.ts#L2-L12)
 
 ## 详细组件分析
 
@@ -159,7 +186,8 @@ API-->>Caller : "返回ProviderConfig(含baseUrl/apiMode)"
 
 ```mermaid
 flowchart TD
-Start(["进入resolveModelSelection"]) --> Parse["解析model_key(provider::modelId)"]
+Start(["进入resolveModelSelection"]) --> Proxy["设置代理配置"]
+Proxy --> Parse["解析model_key(provider::modelId)"]
 Parse --> Load["读取用户模型列表"]
 Load --> Find{"精确匹配成功?"}
 Find -- 否 --> Error["抛出MODEL_NOT_FOUND"]
@@ -170,6 +198,7 @@ Protocol --> Return["返回ModelSelection"]
 
 **图表来源**
 - [src/lib/api-config.ts:323-352](file://src/lib/api-config.ts#L323-L352)
+- [lib/prompts/proxy.ts:2-12](file://lib/prompts/proxy.ts#L2-L12)
 
 **章节来源**
 - [src/lib/api-config.ts:113-191](file://src/lib/api-config.ts#L113-L191)
@@ -372,22 +401,67 @@ Decrypt --> Plain["输出明文API Key"]
 **章节来源**
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
 
+### **新增** 代理配置支持
+职责与特性：
+- **多环境变量格式支持**：支持PROXY_URL、https_proxy、HTTP_PROXY、http_proxy等多种环境变量格式，提升部署兼容性；
+- **动态代理配置**：在运行时根据环境变量动态设置全局代理，适用于企业网络环境；
+- **统一代理入口**：通过setProxy函数集中管理代理配置，所有网络请求前调用；
+- **条件性代理设置**：仅当检测到代理配置时才启用代理，避免不必要的性能开销；
+- **广泛适用性**：在LLM网关、图像生成器、提供商测试等多个组件中统一使用。
+
+```mermaid
+flowchart TD
+Start(["setProxy函数调用"]) --> CheckEnv["检查环境变量"]
+CheckEnv --> Env1{"PROXY_URL存在?"}
+Env1 -- 是 --> UseProxy["使用PROXY_URL"]
+Env1 -- 否 --> Env2{"https_proxy存在?"}
+Env2 -- 是 --> UseProxy
+Env2 -- 否 --> Env3{"HTTP_PROXY存在?"}
+Env3 -- 是 --> UseProxy
+Env3 -- 否 --> Env4{"http_proxy存在?"}
+Env4 -- 是 --> UseProxy
+Env4 -- 否 --> NoProxy["无代理配置"]
+UseProxy --> ImportUndici["动态导入undici"]
+ImportUndici --> CreateAgent["创建ProxyAgent"]
+CreateAgent --> SetGlobal["设置全局调度器"]
+SetGlobal --> End(["代理配置完成"])
+NoProxy --> End
+```
+
+**图表来源**
+- [lib/prompts/proxy.ts:2-12](file://lib/prompts/proxy.ts#L2-L12)
+
+**章节来源**
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
+- [src/lib/generators/image/gemini-compatible.ts:80-90](file://src/lib/generators/image/gemini-compatible.ts#L80-L90)
+- [src/lib/generators/image/google.ts:190-200](file://src/lib/generators/image/google.ts#L190-L200)
+- [src/lib/model-gateway/llm.ts:1-40](file://src/lib/model-gateway/llm.ts#L1-L40)
+- [src/lib/user-api/provider-test.ts:425-435](file://src/lib/user-api/provider-test.ts#L425-L435)
+
 ## 依赖关系分析
 - api-config.ts依赖crypto-utils进行API Key解密，并依赖model-config-contract进行model_key解析与模板校验；
 - config-service.ts依赖model-config-contract进行model_key解析，依赖catalog与lookup进行能力解析与合并；
 - openai-compat-media-template与validator共同保障模板合法性；
-- env.ts为统一URL工具，服务于内部服务调用。
+- env.ts为统一URL工具，服务于内部服务调用；
+- **新增** proxy.ts为代理配置中心，被多个网络组件依赖。
 
 ```mermaid
 graph LR
 api_cfg["api-config.ts"] --> crypto["crypto-utils.ts"]
 api_cfg --> contract["model-config-contract.ts"]
 api_cfg --> tmpl["openai-compat-media-template.ts"]
+api_cfg --> proxy["proxy.ts"]
 cfg_svc["config-service.ts"] --> contract
 cfg_svc --> catalog["model-capabilities/catalog.ts"]
 cfg_svc --> lookup["model-capabilities/lookup.ts"]
+cfg_svc --> proxy
 tmpl --> tmpl_validator["user-api/model-template/validator.ts"]
 cfg_svc --> env_utils["env.ts"]
+proxy --> undici["undici库"]
+gemini_compat["gemini-compatible.ts"] --> proxy
+google_img["google.ts"] --> proxy
+llm_gateway["llm.ts"] --> proxy
+provider_test["provider-test.ts"] --> proxy
 ```
 
 **图表来源**
@@ -398,6 +472,7 @@ cfg_svc --> env_utils["env.ts"]
 - [src/lib/openai-compat-media-template.ts:1-6](file://src/lib/openai-compat-media-template.ts#L1-L6)
 - [src/lib/user-api/model-template/validator.ts:1-5](file://src/lib/user-api/model-template/validator.ts#L1-L5)
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
 
 **章节来源**
 - [src/lib/api-config.ts:10-21](file://src/lib/api-config.ts#L10-L21)
@@ -407,12 +482,14 @@ cfg_svc --> env_utils["env.ts"]
 - [src/lib/openai-compat-media-template.ts:1-6](file://src/lib/openai-compat-media-template.ts#L1-L6)
 - [src/lib/user-api/model-template/validator.ts:1-5](file://src/lib/user-api/model-template/validator.ts#L1-L5)
 - [src/lib/env.ts:1-38](file://src/lib/env.ts#L1-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
 
 ## 性能考量
 - 能力目录缓存：catalog使用签名与内存缓存避免重复解析，建议在变更目录文件时触发缓存失效；
 - 解析链路短路：api-config的严格解析与快速失败减少无效调用；
 - 自动填充策略：仅在必要字段缺失且catalog声明存在时自动填充，降低运行时开销；
-- 批量加解密：对包含敏感字段的对象进行批量处理，避免逐字段操作带来的重复成本。
+- 批量加解密：对包含敏感字段的对象进行批量处理，避免逐字段操作带来的重复成本；
+- **新增** 代理配置优化：setProxy函数采用条件性代理设置，仅在检测到代理配置时才创建代理Agent，避免不必要的性能开销。
 
 [本节为通用指导，无需特定文件来源]
 
@@ -424,16 +501,20 @@ cfg_svc --> env_utils["env.ts"]
 - MODEL_LLM_PROTOCOL_INVALID/MODEL_COMPAT_MEDIA_TEMPLATE_INVALID：检查llm协议与模板字段合法性；
 - CAPABILITY_*系列错误：核对能力字段与值是否在catalog允许范围内；
 - IMAGE_MODEL_CAPABILITY_NOT_CONFIGURED：检查项目/用户能力默认与覆盖配置；
-- 解密失败：检查API_ENCRYPTION_KEY/NEXTAUTH_SECRET配置与格式。
+- 解密失败：检查API_ENCRYPTION_KEY/NEXTAUTH_SECRET配置与格式；
+- **新增** 代理连接失败：检查PROXY_URL环境变量格式是否正确，确认代理服务器可达性。
 
 **章节来源**
 - [src/lib/api-config.ts:113-191](file://src/lib/api-config.ts#L113-L191)
 - [src/lib/api-config.ts:219-242](file://src/lib/api-config.ts#L219-L242)
 - [src/lib/config-service.ts:222-237](file://src/lib/config-service.ts#L222-L237)
 - [src/lib/user-api/model-template/validator.ts:50-68](file://src/lib/user-api/model-template/validator.ts#L50-L68)
+- [lib/prompts/proxy.ts:2-12](file://lib/prompts/proxy.ts#L2-L12)
 
 ## 结论
-Waoowaoo的API配置管理系统通过“严格配置读取 + 契约驱动能力 + 模板化接口 + 加密存储”的设计，实现了高一致性、强校验与可扩展的配置管理。结合项目级与用户级配置聚合、能力默认/覆盖/运行时选择的合并策略，以及完善的错误码与自动填充机制，满足多租户、环境隔离与A/B测试等复杂场景需求。
+Waoowaoo的API配置管理系统通过"严格配置读取 + 契约驱动能力 + 模板化接口 + 加密存储 + 代理配置"的设计，实现了高一致性、强校验与可扩展的配置管理。结合项目级与用户级配置聚合、能力默认/覆盖/运行时选择的合并策略，以及完善的错误码与自动填充机制，满足多租户、环境隔离与A/B测试等复杂场景需求。
+
+**更新** 新增的代理配置支持显著提升了系统的网络兼容性，通过支持多种环境变量格式，使得系统能够在各种网络环境下稳定运行，包括企业防火墙、代理服务器等复杂网络环境。
 
 [本节为总结，无需特定文件来源]
 
@@ -478,15 +559,31 @@ Waoowaoo的API配置管理系统通过“严格配置读取 + 契约驱动能力
 - [src/lib/model-capabilities/catalog.ts:120-137](file://src/lib/model-capabilities/catalog.ts#L120-L137)
 - [src/lib/openai-compat-media-template.ts:42-44](file://src/lib/openai-compat-media-template.ts#L42-L44)
 
+### **新增** 代理配置最佳实践
+- **环境变量设置**：优先使用PROXY_URL，其次尝试https_proxy、HTTP_PROXY、http_proxy，确保兼容不同系统；
+- **代理格式要求**：支持http://、https://、socks://等协议格式，确保代理服务器地址正确；
+- **性能优化**：代理配置仅在需要时启用，避免不必要的网络开销；
+- **故障排查**：检查代理服务器连通性、认证信息、防火墙设置；
+- **安全考虑**：确保代理服务器可信，避免敏感数据泄露。
+
+**章节来源**
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)
+- [src/lib/generators/image/gemini-compatible.ts:80-90](file://src/lib/generators/image/gemini-compatible.ts#L80-L90)
+- [src/lib/generators/image/google.ts:190-200](file://src/lib/generators/image/google.ts#L190-L200)
+- [src/lib/model-gateway/llm.ts:1-40](file://src/lib/model-gateway/llm.ts#L1-L40)
+- [src/lib/user-api/provider-test.ts:425-435](file://src/lib/user-api/provider-test.ts#L425-L435)
+
 ### 最佳实践
 - 始终使用provider::modelId复合键；
 - 项目级配置优先于用户级配置；
 - 能力选项尽量使用默认值与覆盖项，避免运行时频繁校验；
 - 模板路径必须为绝对URL或相对路径，避免注入风险；
-- API Key必须加密存储，定期轮换密钥并备份。
+- API Key必须加密存储，定期轮换密钥并备份；
+- **新增** 代理配置应根据部署环境合理设置，确保网络连接稳定性。
 
 **章节来源**
 - [src/lib/api-config.ts:4-8](file://src/lib/api-config.ts#L4-L8)
 - [src/lib/config-service.ts:6-7](file://src/lib/config-service.ts#L6-L7)
 - [src/lib/user-api/model-template/validator.ts:15-33](file://src/lib/user-api/model-template/validator.ts#L15-L33)
 - [src/lib/crypto-utils.ts:27-38](file://src/lib/crypto-utils.ts#L27-L38)
+- [lib/prompts/proxy.ts:1-12](file://lib/prompts/proxy.ts#L1-L12)

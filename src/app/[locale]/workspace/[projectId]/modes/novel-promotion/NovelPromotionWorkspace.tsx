@@ -114,7 +114,7 @@ function NovelPromotionWorkspaceContent(props: NovelPromotionWorkspaceProps) {
         settingsLabel={vm.i18n.t('buttons.settings')}
       />
 
-      <div className="flex-1 overflow-y-auto flex flex-col px-4 sm:px-6 lg:px-10 py-8">
+      <div className="flex-1 overflow-y-auto flex flex-col px-4 sm:px-6 lg:px-10">
         <WorkspaceStageRuntimeProvider value={vm.runtime.stageRuntime}>
           <WorkspaceStageContent currentStage={vm.stageNav.currentStage} />
         </WorkspaceStageRuntimeProvider>

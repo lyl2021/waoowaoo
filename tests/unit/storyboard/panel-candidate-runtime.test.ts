@@ -6,7 +6,7 @@ import {
   getPanelCandidatesFromRuntime,
 } from '@/app/[locale]/workspace/[projectId]/modes/novel-promotion/components/storyboard/hooks/panel-candidate-runtime'
 
-interface CandidateStateLike {
+interface CandidateStateStub {
   id: string
   candidates: string[]
   selectedIndex: number
@@ -16,8 +16,8 @@ interface CandidateStateLike {
   rawCandidatesCount?: number
 }
 
-interface PanelCandidateSystemLike {
-  getCandidateState: (id: string) => CandidateStateLike | null
+interface CandidateSystemStub {
+  getCandidateState: (id: string) => CandidateStateStub | null
   clearCandidates: (id: string) => void
   initCandidates: (
     id: string,
@@ -35,14 +35,21 @@ interface PanelCandidateSystemLike {
   ) => void
 }
 
-function createCandidateSystem(initial?: CandidateStateLike): {
-  system: PanelCandidateSystemLike
-  states: Map<string, CandidateStateLike>
+interface PanelStub {
+  id: string
+  candidateImages: string
+  imageUrl: string | null
+  previousImageUrl: string | null
+}
+
+function createCandidateSystem(initial?: CandidateStateStub): {
+  system: CandidateSystemStub
+  states: Map<string, CandidateStateStub>
 } {
-  const states = new Map<string, CandidateStateLike>()
+  const states = new Map<string, CandidateStateStub>()
   if (initial) states.set(initial.id, initial)
 
-  const system: PanelCandidateSystemLike = {
+  const system: CandidateSystemStub = {
     getCandidateState: (id: string) => states.get(id) ?? null,
     clearCandidates: (id: string) => {
       states.delete(id)
@@ -124,19 +131,15 @@ function createCandidateSystem(initial?: CandidateStateLike): {
   return { system, states }
 }
 
-type MockPanel = Pick<NovelPromotionPanel, 'id' | 'imageUrl' | 'previousImageUrl'> & {
-  candidateImages: string
-}
-
 describe('panel-candidate-runtime', () => {
   it('initCandidates: first selection should default to index 0 when state is missing', () => {
     const { system, states } = createCandidateSystem()
-    const panel: MockPanel = {
+    const panel = {
       id: 'p1',
       candidateImages: JSON.stringify(['PENDING:1', 'a.png']),
       imageUrl: null,
       previousImageUrl: null,
-    }
+    } satisfies PanelStub
 
     ensurePanelCandidatesInitialized(panel as unknown as NovelPromotionPanel, system)
 
@@ -153,17 +156,17 @@ describe('panel-candidate-runtime', () => {
       originalUrl: null,
       previousUrl: null,
       candidates: ['a.png', 'b.png'],
-      selectedIndex: 1,
+      selectedIndex: 1, // selected 'b'
       hasPendingCandidates: false,
       rawCandidatesCount: 2,
     })
 
-    const panel: MockPanel = {
+    const panel = {
       id: 'p1',
       candidateImages: JSON.stringify(['a.png', 'b.png', 'PENDING:2']),
       imageUrl: null,
       previousImageUrl: null,
-    }
+    } satisfies PanelStub
 
     ensurePanelCandidatesInitialized(panel as unknown as NovelPromotionPanel, system)
 
@@ -177,22 +180,23 @@ describe('panel-candidate-runtime', () => {
       originalUrl: null,
       previousUrl: null,
       candidates: ['a.png', 'b.png'],
-      selectedIndex: 1,
+      selectedIndex: 1, // selected 'b'
       hasPendingCandidates: true,
       rawCandidatesCount: 3,
     })
 
-    const panel: MockPanel = {
+    const panel = {
       id: 'p1',
       candidateImages: JSON.stringify(['a.png', 'b.png', 'c.png', 'PENDING:3']),
       imageUrl: null,
       previousImageUrl: null,
-    }
+    } satisfies PanelStub
 
     ensurePanelCandidatesInitialized(panel as unknown as NovelPromotionPanel, system)
 
     const st = states.get('p1')
     expect(st!.candidates).toEqual(['a.png', 'b.png', 'c.png'])
+    // selected url 'b.png' should stay selected at index 1
     expect(st!.selectedIndex).toBe(1)
   })
 
@@ -207,12 +211,12 @@ describe('panel-candidate-runtime', () => {
       rawCandidatesCount: 3,
     })
 
-    const panel: MockPanel = {
+    const panel = {
       id: 'p1',
       candidateImages: JSON.stringify(['a.png', 'b.png']),
       imageUrl: 'new-main.png',
       previousImageUrl: null,
-    }
+    } satisfies PanelStub
 
     ensurePanelCandidatesInitialized(panel as unknown as NovelPromotionPanel, system)
 
@@ -221,17 +225,19 @@ describe('panel-candidate-runtime', () => {
   })
 
   it('getPanelCandidatesFromRuntime should read selection from local state', () => {
-    const { system, states } = createCandidateSystem()
-    const panel: MockPanel = {
+    const { system } = createCandidateSystem()
+    const panel = {
       id: 'p1',
       candidateImages: JSON.stringify(['a.png', 'b.png']),
       imageUrl: null,
       previousImageUrl: null,
-    }
+    } satisfies PanelStub
 
+    // First init
     ensurePanelCandidatesInitialized(panel as unknown as NovelPromotionPanel, system)
-    const st = states.get('p1')!
-    st.selectedIndex = 1
+    // Mutate selection manually in our stub
+    const st = system.getCandidateState('p1')
+    st!.selectedIndex = 1
 
     const data = getPanelCandidatesFromRuntime(panel as unknown as NovelPromotionPanel, system)
     expect(data?.selectedIndex).toBe(1)

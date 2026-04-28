@@ -243,7 +243,7 @@ export default function StoryInputComposer({
 
       {/* 底部：操作按钮 */}
       {(secondaryActions || primaryAction) && (
-        <div className="flex items-center justify-end gap-2 px-5 pb-4">
+        <div className="flex items-center justify-end gap-2 px-5 pt-3 pb-4 border-t border-[var(--glass-stroke-soft)]/50">
           {secondaryActions}
           {primaryAction}
         </div>
