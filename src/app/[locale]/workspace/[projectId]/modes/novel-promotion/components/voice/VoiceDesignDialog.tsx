@@ -10,6 +10,7 @@ interface VoiceDesignDialogProps {
   isOpen: boolean
   speaker: string
   hasExistingVoice?: boolean
+  initialVoicePrompt?: string
   onClose: () => void
   onSave: (voiceId: string, audioBase64: string) => void
   projectId: string
@@ -19,6 +20,7 @@ export default function VoiceDesignDialog({
   isOpen,
   speaker,
   hasExistingVoice = false,
+  initialVoicePrompt,
   onClose,
   onSave,
   projectId,
@@ -36,6 +38,7 @@ export default function VoiceDesignDialog({
       isOpen={isOpen}
       speaker={speaker}
       hasExistingVoice={hasExistingVoice}
+      initialVoicePrompt={initialVoicePrompt}
       onClose={onClose}
       onSave={onSave}
       onDesignVoice={handleDesignVoice}

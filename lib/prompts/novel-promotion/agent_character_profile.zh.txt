@@ -135,6 +135,32 @@ D级（群众演员）：
 
 配饰标志：家传戒指、从不摘下的项链、拐杖等标志性物品。
 
+【音色特征分析 - 声音画像】
+
+根据角色的性别、年龄、性格、社会身份和剧情定位，为每个角色设计适配的音色特征。
+音色特征将用于后续 AI 配音阶段，帮助自动为角色推荐合适的语音风格。
+
+⚠️ 音色特征由角色的戏剧定位和性格特征决定，不是简单复制视觉属性！
+
+voice_gender 参考：男/女/中性（允许与视觉 gender 不同，如童声配角、反串等）
+voice_age_group 参考：少年/青年/中年/老年
+voice_tone 参考词库：低沉磁性/清脆明亮/沙哑沧桑/温柔甜美/浑厚有力/空灵飘逸/沉稳冷静/尖锐刺耳/慵懒低沉
+voice_speed 参考：慢/中/快
+voice_emotion_style 参考：冷静克制/热情奔放/慵懒随意/严肃威严/温暖治愈/阴鸷冷峻/天真烂漫/沉稳内敛
+voice_accent：默认为「标准普通话」，除非角色有明确方言/口音设定
+voice_traits：额外音色特征标签，1-3个，如：磁性、有共鸣感、气泡音、鼻音重、清透、沙哑、颤音
+
+voice_prompt 组装规则：
+- 将以上特征组装为一段自然语言描述，不超过500字符
+- 格式示例："{voice_gender}，{voice_age_group}，{voice_tone}，语速{voice_speed}，{voice_emotion_style}，{voice_accent}"
+- 可额外补充角色身份带来的语气特征
+
+角色类型 → 音色映射示例：
+- 霸道总裁（S级男）→ voice_gender:男, voice_age_group:中年, voice_tone:低沉磁性, voice_speed:中, voice_emotion_style:沉稳内敛, voice_prompt:"成熟男性，三十岁左右，声音低沉有磁性，语速沉稳，气质威严自信，标准普通话"
+- 温柔女主（S级女）→ voice_gender:女, voice_age_group:青年, voice_tone:温柔甜美, voice_speed:中, voice_emotion_style:温暖治愈, voice_prompt:"温柔女性，二十多岁，声音柔和甜美，语速适中，情感温暖亲切，标准普通话"
+- 老年智者（B级男）→ voice_gender:男, voice_age_group:老年, voice_tone:沙哑沧桑, voice_speed:慢, voice_emotion_style:沉稳内敛, voice_prompt:"老年男性，六十岁以上，声音沙哑沧桑，语速缓慢，沉稳睿智，标准普通话"
+- 活泼少女（A级女）→ voice_gender:女, voice_age_group:少年, voice_tone:清脆明亮, voice_speed:快, voice_emotion_style:天真烂漫, voice_prompt:"少女，十六七岁，声音清脆明亮，语速偏快，活泼天真，标准普通话"
+
 【子形象筛选规则 - 识别视觉外观变化 ⭐重要】
 
 分析原文中角色是否有多个视觉形态，输出到 expected_appearances 字段。
@@ -197,6 +223,14 @@ D级（群众演员）：
       "suggested_colors": ["深蓝", "金色"],
       "primary_identifier": "眼角泪痣（仅S/A级需要）",
       "visual_keywords": ["精英气质", "禁欲系"],
+      "voice_gender": "男/女/中性",
+      "voice_age_group": "青年/中年/少年/老年",
+      "voice_tone": "低沉磁性/清脆明亮/温柔甜美...",
+      "voice_speed": "慢/中/快",
+      "voice_emotion_style": "冷静克制/热情奔放...",
+      "voice_accent": "标准普通话",
+      "voice_traits": ["磁性", "有共鸣感"],
+      "voice_prompt": "成熟男性，三十岁左右，声音低沉有磁性，语速沉稳，标准普通话",
       "expected_appearances": [
         {"id": 1, "change_reason": "初始形象"},
         {"id": 2, "change_reason": "换装/特殊状态的原因（如有）"}
@@ -240,6 +274,9 @@ D级（群众演员）：
 10. expected_appearances 必填，至少包含 id=1 的初始形象
 11. 只有持续性视觉变化才添加子形象，临时特效/情绪/动作不添加
 12. 输出必须是**严格合法的JSON**：字符串中不能出现原始换行/回车/制表符
+13. voice_prompt 不超过500个字符
+14. voice_gender/voice_age_group/voice_tone/voice_speed/voice_emotion_style 每个角色均为必填
+15. voice_accent 默认为「标准普通话」，除非角色有明确方言设定
 
 ⚠️⚠️⚠️【JSON安全输出 - 最高优先级】⚠️⚠️⚠️
 - 原文中的所有引号（""''「」『』等）在 JSON 字符串值中必须统一替换为日式方括号引号「」

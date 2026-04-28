@@ -20,6 +20,7 @@ interface VoiceDesignDialogBaseProps {
   isOpen: boolean
   speaker: string
   hasExistingVoice?: boolean
+  initialVoicePrompt?: string
   onClose: () => void
   onSave: (voiceId: string, audioBase64: string) => void
   onDesignVoice: (payload: VoiceDesignMutationPayload) => Promise<VoiceDesignMutationResult>
@@ -29,6 +30,7 @@ export default function VoiceDesignDialogBase({
   isOpen,
   speaker,
   hasExistingVoice = false,
+  initialVoicePrompt,
   onClose,
   onSave,
   onDesignVoice,
@@ -36,7 +38,7 @@ export default function VoiceDesignDialogBase({
   const t = useTranslations('common')
   const tv = useTranslations('voice.voiceDesign')
 
-  const [voicePrompt, setVoicePrompt] = useState('')
+  const [voicePrompt, setVoicePrompt] = useState(initialVoicePrompt ?? '')
   const [previewText, setPreviewText] = useState(tv('defaultPreviewText'))
   const [schemeCount, setSchemeCount] = useState(String(DEFAULT_VOICE_SCHEME_COUNT))
   const [isDesignSubmitting, setIsDesignSubmitting] = useState(false)
@@ -129,7 +131,7 @@ export default function VoiceDesignDialogBase({
   }
 
   const handleClose = () => {
-    setVoicePrompt('')
+    setVoicePrompt(initialVoicePrompt ?? '')
     setPreviewText(tv('defaultPreviewText'))
     setSchemeCount(String(DEFAULT_VOICE_SCHEME_COUNT))
     setError(null)

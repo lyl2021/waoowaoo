@@ -16,11 +16,13 @@ import {
     useUpdateProjectCharacterVoiceSettings,
     useSaveProjectDesignedVoice,
 } from '@/lib/query/hooks'
+import { parseProfileData, extractVoicePromptFromProfile } from '@/types/character-profile'
 
 interface VoiceDesignCharacter {
     id: string
     name: string
     hasExistingVoice: boolean
+    initialVoicePrompt?: string
 }
 
 interface UseTTSGenerationProps {
@@ -71,10 +73,22 @@ export function useTTSGeneration({
     // 打开 AI 声音设计对话框
     const handleOpenVoiceDesign = (characterId: string, characterName: string) => {
         const character = characters.find(c => c.id === characterId)
+        let initialVoicePrompt: string | undefined
+        if (character?.profileData) {
+            const profile = parseProfileData(
+                typeof character.profileData === 'string'
+                    ? character.profileData
+                    : JSON.stringify(character.profileData),
+            )
+            if (profile) {
+                initialVoicePrompt = extractVoicePromptFromProfile(profile) ?? undefined
+            }
+        }
         setVoiceDesignCharacter({
             id: characterId,
             name: characterName,
-            hasExistingVoice: !!character?.customVoiceUrl
+            hasExistingVoice: !!character?.customVoiceUrl,
+            initialVoicePrompt,
         })
     }
 

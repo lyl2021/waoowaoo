@@ -45,6 +45,7 @@ export default function CharacterProfileDialog({
     const [newTag, setNewTag] = useState('')
     const [newColor, setNewColor] = useState('')
     const [newKeyword, setNewKeyword] = useState('')
+    const [newVoiceTrait, setNewVoiceTrait] = useState('')
 
     useEffect(() => {
         setFormData(profileData)
@@ -95,6 +96,21 @@ export default function CharacterProfileDialog({
         setFormData({
             ...formData,
             visual_keywords: formData.visual_keywords.filter((_, i) => i !== index)
+        })
+    }
+
+    const addVoiceTrait = () => {
+        const traits = formData.voice_traits ?? []
+        if (newVoiceTrait.trim() && !traits.includes(newVoiceTrait.trim())) {
+            setFormData({ ...formData, voice_traits: [...traits, newVoiceTrait.trim()] })
+            setNewVoiceTrait('')
+        }
+    }
+
+    const removeVoiceTrait = (index: number) => {
+        setFormData({
+            ...formData,
+            voice_traits: (formData.voice_traits ?? []).filter((_, i) => i !== index)
         })
     }
 
@@ -256,6 +272,130 @@ export default function CharacterProfileDialog({
                             <button onClick={addKeyword} className="px-4 py-2 bg-[var(--glass-accent-from)] text-white rounded-lg hover:bg-[var(--glass-accent-to)]">
                                 {t("common.add")}
                             </button>
+                        </div>
+                    </div>
+
+                    {/* 音色特征 */}
+                    <div className="border-t border-[var(--glass-stroke-base)] pt-4">
+                        <div className="flex items-baseline gap-2 mb-3">
+                            <span className="text-sm font-semibold text-[var(--glass-text-primary)]">{t('characterProfile.voiceSection')}</span>
+                            <span className="text-xs text-[var(--glass-text-tertiary)]">{t('characterProfile.voiceSectionNote')}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* 声音性别 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceGender')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_gender ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_gender: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceGenderPlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                            {/* 声音年龄段 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceAgeGroup')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_age_group ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_age_group: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceAgeGroupPlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                            {/* 音色 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceTone')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_tone ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_tone: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceTonePlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                            {/* 语速 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceSpeed')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_speed ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_speed: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceSpeedPlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                            {/* 情感风格 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceEmotionStyle')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_emotion_style ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_emotion_style: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceEmotionStylePlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                            {/* 口音/方言 */}
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceAccent')}</label>
+                                <input
+                                    type="text"
+                                    value={formData.voice_accent ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, voice_accent: e.target.value || undefined })}
+                                    placeholder={t('characterProfile.voiceAccentPlaceholder')}
+                                    className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 声音特征标签 */}
+                        <div className="mt-3">
+                            <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">{t('characterProfile.voiceTraits')}</label>
+                            <div className="flex gap-2 mb-2 flex-wrap">
+                                {(formData.voice_traits ?? []).map((trait, i) => (
+                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--glass-tone-info-bg)] text-[var(--glass-tone-info-fg)] rounded-lg text-sm">
+                                        {trait}
+                                        <button onClick={() => removeVoiceTrait(i)} className="inline-flex h-4 w-4 items-center justify-center hover:text-[var(--glass-text-primary)]">
+                                            <AppIcon name="closeSm" className="h-3 w-3" />
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newVoiceTrait}
+                                    onChange={(e) => setNewVoiceTrait(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addVoiceTrait())}
+                                    placeholder={t('characterProfile.addVoiceTraitPlaceholder')}
+                                    className="flex-1 px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm"
+                                />
+                                <button onClick={addVoiceTrait} className="px-4 py-2 bg-[var(--glass-accent-from)] text-white rounded-lg hover:bg-[var(--glass-accent-to)] text-sm">
+                                    {t("common.add")}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* voicePrompt */}
+                        <div className="mt-3">
+                            <label className="block text-xs font-medium text-[var(--glass-text-secondary)] mb-1">
+                                {t('characterProfile.voicePrompt')}
+                                <span className="ml-1 text-[var(--glass-text-tertiary)] font-normal">{t('characterProfile.voicePromptHint')}</span>
+                            </label>
+                            <textarea
+                                value={formData.voice_prompt ?? ''}
+                                onChange={(e) => setFormData({ ...formData, voice_prompt: e.target.value || undefined })}
+                                placeholder={t('characterProfile.voicePromptPlaceholder')}
+                                maxLength={500}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-[var(--glass-stroke-strong)] rounded-lg text-sm resize-none"
+                            />
+                            <div className="text-right text-xs text-[var(--glass-text-tertiary)]">
+                                {(formData.voice_prompt ?? '').length}/500
+                            </div>
                         </div>
                     </div>
                 </div>

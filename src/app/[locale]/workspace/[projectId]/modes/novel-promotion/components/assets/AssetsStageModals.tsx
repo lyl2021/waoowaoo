@@ -51,6 +51,7 @@ interface CharacterImageEditModalState {
 interface VoiceDesignCharacterState {
   name: string
   hasExistingVoice: boolean
+  initialVoicePrompt?: string
 }
 
 interface EditingProfileState {
@@ -230,6 +231,7 @@ export default function AssetsStageModals({
           isOpen={!!voiceDesignCharacter}
           speaker={voiceDesignCharacter.name}
           hasExistingVoice={voiceDesignCharacter.hasExistingVoice}
+          initialVoicePrompt={voiceDesignCharacter.initialVoicePrompt}
           projectId={projectId}
           onClose={handleCloseVoiceDesign}
           onSave={handleVoiceDesignSave}

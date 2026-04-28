@@ -153,6 +153,12 @@ export default function CharacterProfileCard({
                             ))}
                         </div>
                     </div>
+                    {profileData.voice_prompt && (
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className="text-[var(--glass-text-tertiary)] w-[2.5rem] shrink-0 text-xs">{t('characterProfile.summary.voice')}</span>
+                            <span className="text-[var(--glass-text-primary)] truncate" title={profileData.voice_prompt}>{profileData.voice_prompt}</span>
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 text-sm">
                         <span className="text-[var(--glass-text-tertiary)] w-[2.5rem] shrink-0 text-xs">{t('characterProfile.summary.costume')}</span>
                         <span className="text-[var(--glass-text-primary)]">

@@ -43,6 +43,32 @@ export interface CharacterProfileData {
 
     /** 年龄段描述 */
     age_range: string
+
+    // ---- 音色特征（可选，由 AI 角色分析生成） ----
+
+    /** 音色性别（允许与视觉 gender 不同，如反串） */
+    voice_gender?: string
+
+    /** 音色年龄感，如"青年"、"中年"、"少年" */
+    voice_age_group?: string
+
+    /** 音色质感，如"低沉磁性"、"清脆明亮" */
+    voice_tone?: string
+
+    /** 默认语速倾向 */
+    voice_speed?: string
+
+    /** 默认情感风格，如"冷静克制"、"热情奔放" */
+    voice_emotion_style?: string
+
+    /** 口音/方言，默认"标准普通话" */
+    voice_accent?: string
+
+    /** 额外音色标签 */
+    voice_traits?: string[]
+
+    /** 组装好的 voicePrompt（<=500字符），可直接用于百炼 voice-design */
+    voice_prompt?: string
 }
 
 /**
@@ -85,4 +111,18 @@ export function validateProfileData(data: unknown): data is CharacterProfileData
         typeof candidate.gender === 'string' &&
         typeof candidate.age_range === 'string'
     )
+}
+
+const VOICE_PROMPT_MAX_LENGTH = 500
+
+/**
+ * 从角色档案中提取 voicePrompt（用于百炼 voice-design）
+ * 返回 null 表示档案中未包含音色特征
+ */
+export function extractVoicePromptFromProfile(profile: CharacterProfileData): string | null {
+    const prompt = typeof profile.voice_prompt === 'string' ? profile.voice_prompt.trim() : ''
+    if (!prompt) return null
+    return prompt.length > VOICE_PROMPT_MAX_LENGTH
+        ? prompt.slice(0, VOICE_PROMPT_MAX_LENGTH)
+        : prompt
 }
